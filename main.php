@@ -155,7 +155,6 @@ function woocommerce_custom_shipping_setting_page()
                     </div>
                 </form>
                 <br>
-                <br>
                 <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
             </div>
             <?php
@@ -176,9 +175,6 @@ function woocommerce_custom_shipping_setting_page()
                     <p>หากลูกค้าเลือกขนส่ง Kerry Express จะบวกเพิ่มเป็นจำนวนกี่บาท</p>
                     <input type="number" name="kerry_express_fee"
                         value="<?php echo esc_attr(get_option('kerry_express_fee', 30)); ?>" />
-                    <h2>ค่าแพ็ค</h2>
-                    <input type="number" name="packing_fee"
-                        value="<?php echo esc_attr(get_option('packing_fee', 60)); ?>" />
                     <h2>พื้นที่ห่างไกล (Remote Areas)</h2>
                     <p>กรอกรหัสไปรษณีย์ที่ต้องการบวกค่าบริการเพิ่ม (แยกด้วยเครื่องหมายคอมม่า หรือขึ้นบรรทัดใหม่)</p>
                     <textarea name="remote_areas_list" rows="10" cols="50" class="large-text" style="font-family: monospace;"><?php 
@@ -243,7 +239,7 @@ function woocommerce_custom_shipping_setting_page()
                             </tr>
                         </tbody>
                     </table>
-                    <br><br>
+                    <br>
                     <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
                 </div>
             </form>
@@ -299,7 +295,6 @@ function woocommerce_custom_shipping_setting_init()
     register_setting('packing_shipping_settings_group', 'packing_fee_20_30');
     register_setting('packing_shipping_settings_group', 'packing_fee_30_plus');
     
-    register_setting('shipping_settings_group', 'packing_fee');
     register_setting('shipping_settings_group', 'kerry_express_fee');
     register_setting('shipping_settings_group', 'remote_surcharge');
     register_setting('shipping_settings_group', 'remote_areas_list');
@@ -312,7 +307,6 @@ function combined_shipping_methods($rates, $package)
 {
     $new_rates = array();
     $total_weight = WC()->cart->get_cart_contents_weight(); // กรัม
-    //$packing_fee = (float) get_option('packing_fee', 60); // ค่าแพ็ค
 
     if($total_weight <= 1000) {
         $packing_fee = (float) get_option('packing_fee_0_1');
