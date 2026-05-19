@@ -26,68 +26,153 @@ function worldchem_custom_shipping_company_menu()
 function woocommerce_custom_shipping_setting_page()
 {
     ?>
-    <div class="wrap" style="background: #fff; padding: 20px; border-radius: 10px; margin-top: 20px;">
-        <form action="options.php" method="post">
+    <style>
+        .leftside {
+            width: 350px;
+            background: #f8f8f8;
+            height: max-content;
+        }
+        .leftside h1 {
+            background: #009FE3;
+            color: #fff;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0;
+        }
+        .leftside a {
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #f8f8f8;
+            color: #000;
+            transition: .2s ease-in-out;
+            display: block;
+            width: 100%;
+            text-decoration: none;
+        }
+        .leftside a:hover {
+            background: #fff;
+            cursor: pointer;
+        }
+        .container {
+            width: 1200px;
+            background: #fff; 
+        }
+        .container h1 {
+            background: #555;
+            color: #fff;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0;
+        }
+        .container p {
+            padding: 0;
+        }
+        .white-label-zone {
+            width: calc(100% + 20px);
+            height: auto;
+            background: #fff;
+            display: flex;
+            margin: 0 0 0 -20px;
+        }
+        .white-label-zone h1,p {
+            padding: 0 20px;
+        }
+    </style>
+    <div class="white-label-zone no-print">
+        <span style="padding: 60px 10px 60px 40px;float: left;font-size: 60px;">🚚</span>
+        <div style="padding: 20px 0;">
+            <h1>WooCommerce Custom Shipping System</h1>
+            <p>ระบบเลือกบริษัทขนส่งเองสำหรับลูกค้า และคำนวณค่าขนส่ง ค่าแพ็คสินค้า ตามน้ำหนัก
+                <br>
+                <strong>Github Repository:</strong> <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company" target="_blank">https://github.com/sunny420x/woocommerce-custom-shipping-company</a>
+            </p>
+        </div>
+    </div>
+    <div class="wrap" style="display: flex;">            
+        <div class="leftside">
+            <h1>WooCommerce Custom Shipping</h1>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=ems">🚚 EMS</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=packing_settings">📦 การแพ็คสินค้า</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=settings">🔧 ตั้งค่าทั่วไป</a>
+        </div>
+        <div class="container">
             <?php
-            settings_fields('shipping_settings_group');
+            if(isset($_GET['option']) && $_GET['option'] == "ems") {
             ?>
-            <h1>จัดการค่าบริการบริษัทขนส่ง</h1>
-            <p>สำหรับระบบรองรับการเลือกบริษัทขนส่งเอง</p>
-            <hr>
-            
-            <div style="
-            display: flex; 
-            gap: 20px;
-            ">
-                <div>
-                    <h2>ไปรษณีย์ไทย (EMS)</h2>
-                    <p>หากลูกค้าเลือกขนส่ง ไปรษณีย์ไทย (EMS) <br>ให้บวกเพิ่มกี่บาท</p>
-                    <input type="number" name="ems_fee" value="<?php echo esc_attr(get_option('ems_fee', 20)); ?>" />
-                    <h3>ค่าขนส่ง EMS</h3>
-                    <h4>ไม่เกิน 20 กรัม</h4>
-                    <input type="number" name="ems_fee_p1" value="<?php echo esc_attr(get_option('ems_fee_p1', 32)); ?>" />
-                    <h4>20 - 100 กรัม</h4>
-                    <input type="number" name="ems_fee_p2" value="<?php echo esc_attr(get_option('ems_fee_p2', 37)); ?>" />
-                    <h4>100 - 250 กรัม</h4>
-                    <input type="number" name="ems_fee_p3" value="<?php echo esc_attr(get_option('ems_fee_p3', 42)); ?>" />
-                    <h4>250 - 500 กรัม</h4>
-                    <input type="number" name="ems_fee_p4" value="<?php echo esc_attr(get_option('ems_fee_p4', 52)); ?>" />
-                    <h4>500 กรัม - 1 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p5" value="<?php echo esc_attr(get_option('ems_fee_p5', 67)); ?>" />
-                    <h4>1.001 กิโลกรัม - 1.5 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p6" value="<?php echo esc_attr(get_option('ems_fee_p6', 82)); ?>" />
-                    <h4>1.501 กิโลกรัม - 2 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p7" value="<?php echo esc_attr(get_option('ems_fee_p7', 97)); ?>" />
-                </div>
-                <div>
-                    <h4>2.001 กิโลกรัม - 2.5 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p8" value="<?php echo esc_attr(get_option('ems_fee_p8', 100)); ?>" />
-                    <h4>2.501 กิโลกรัม - 3 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p9" value="<?php echo esc_attr(get_option('ems_fee_p9', 105)); ?>" />
-                    <h4>3.001 กิโลกรัม - 3.5 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p10"
-                        value="<?php echo esc_attr(get_option('ems_fee_p10', 110)); ?>" />
-                    <h4>3.501 กิโลกรัม - 4 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p11"
-                        value="<?php echo esc_attr(get_option('ems_fee_p11', 120)); ?>" />
-                    <h4>4.001 กิโลกรัม - 4.5 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p12"
-                        value="<?php echo esc_attr(get_option('ems_fee_p12', 120)); ?>" />
-                    <h4>4.501 กิโลกรัม - 5 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p13"
-                        value="<?php echo esc_attr(get_option('ems_fee_p13', 120)); ?>" />
-                    <h4>5.001 กิโลกรัม - 5.5 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p14"
-                        value="<?php echo esc_attr(get_option('ems_fee_p14', 130)); ?>" />
-                    <h4>5.501 กิโลกรัม - 6 กิโลกรัม</h4>
-                    <input type="number" name="ems_fee_p15"
-                        value="<?php echo esc_attr(get_option('ems_fee_p15', 140)); ?>" />
-                    <h4>6 กิโลกรัมขึ้นไป คิดเพิ่มกิโลกรัมละ</h4>
-                    <input type="number" name="ems_fee_after_6kg"
-                        value="<?php echo esc_attr(get_option('ems_fee_after_6kg', 35)); ?>" />
-                </div>
-                <div>
+            <h1>ไปรษณีย์ไทย (EMS)</h1>
+            <div style="padding: 0px 25px 25px 25px;">
+                <form action="options.php" method="post" style="display: flex; gap: 50px;">
+                    <?php
+                    settings_fields('ems_shipping_settings_group');
+                    ?>
+                    <div>
+                        <p>หากลูกค้าเลือกขนส่ง ไปรษณีย์ไทย (EMS) <br>ให้บวกเพิ่มกี่บาท</p>
+                        <input type="number" name="ems_fee" value="<?php echo esc_attr(get_option('ems_fee', 20)); ?>" /> บาท
+                        <h3>ค่าขนส่ง EMS</h3>
+                        <h4>ไม่เกิน 20 กรัม</h4>
+                        <input type="number" name="ems_fee_p1" value="<?php echo esc_attr(get_option('ems_fee_p1', 32)); ?>" /> บาท
+                        <h4>20 - 100 กรัม</h4>
+                        <input type="number" name="ems_fee_p2" value="<?php echo esc_attr(get_option('ems_fee_p2', 37)); ?>" /> บาท
+                        <h4>100 - 250 กรัม</h4>
+                        <input type="number" name="ems_fee_p3" value="<?php echo esc_attr(get_option('ems_fee_p3', 42)); ?>" /> บาท
+                        <h4>250 - 500 กรัม</h4>
+                        <input type="number" name="ems_fee_p4" value="<?php echo esc_attr(get_option('ems_fee_p4', 52)); ?>" /> บาท
+                        <h4>500 กรัม - 1 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p5" value="<?php echo esc_attr(get_option('ems_fee_p5', 67)); ?>" /> บาท
+                    </div>
+                    <div>
+                        <h4>1.001 กิโลกรัม - 1.5 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p6" value="<?php echo esc_attr(get_option('ems_fee_p6', 82)); ?>" /> บาท
+                        <h4>1.501 กิโลกรัม - 2 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p7" value="<?php echo esc_attr(get_option('ems_fee_p7', 97)); ?>" /> บาท
+                        <h4>2.001 กิโลกรัม - 2.5 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p8" value="<?php echo esc_attr(get_option('ems_fee_p8', 100)); ?>" /> บาท
+                        <h4>2.501 กิโลกรัม - 3 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p9" value="<?php echo esc_attr(get_option('ems_fee_p9', 105)); ?>" /> บาท
+                        <h4>3.001 กิโลกรัม - 3.5 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p10"
+                            value="<?php echo esc_attr(get_option('ems_fee_p10', 110)); ?>" /> บาท
+                        <h4>3.501 กิโลกรัม - 4 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p11"
+                            value="<?php echo esc_attr(get_option('ems_fee_p11', 120)); ?>" /> บาท
+                    </div>
+                    <div>
+                        <h4>4.001 กิโลกรัม - 4.5 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p12"
+                            value="<?php echo esc_attr(get_option('ems_fee_p12', 120)); ?>" /> บาท
+                        <h4>4.501 กิโลกรัม - 5 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p13"
+                            value="<?php echo esc_attr(get_option('ems_fee_p13', 120)); ?>" /> บาท
+                        <h4>5.001 กิโลกรัม - 5.5 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p14"
+                            value="<?php echo esc_attr(get_option('ems_fee_p14', 130)); ?>" /> บาท
+                        <h4>5.501 กิโลกรัม - 6 กิโลกรัม</h4>
+                        <input type="number" name="ems_fee_p15"
+                            value="<?php echo esc_attr(get_option('ems_fee_p15', 140)); ?>" /> บาท
+                        <h4>6 กิโลกรัมขึ้นไป คิดเพิ่มกิโลกรัมละ</h4>
+                        <input type="number" name="ems_fee_after_6kg"
+                            value="<?php echo esc_attr(get_option('ems_fee_after_6kg', 35)); ?>" /> บาท
+                    </div>
+                </form>
+                <br>
+                <br>
+                <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
+            </div>
+            <?php
+            } else if(isset($_GET['option']) && $_GET['option'] == "settings") {
+            ?>
+            <h1>ตั้งค่าทั่วไป</h1>
+            <div style="padding: 0 25px 25px 25px;">                
+                <form action="options.php" method="post">
+                    <?php
+                    settings_fields('shipping_settings_group');
+                    ?>
                     <h2>Kerry Express</h2>
+                    <p>เปิดใช้งานขนส่ง Kerry Express</p>
+                    <select name="enable_kerry_express" id="">
+                        <option value="yes" <?php selected(get_option('enable_kerry_express'), 'yes') ?>>ใช่</option>
+                        <option value="no" <?php selected(get_option('enable_kerry_express'), 'no') ?>>ไม่ใช่</option>
+                    </select>
                     <p>หากลูกค้าเลือกขนส่ง Kerry Express จะบวกเพิ่มเป็นจำนวนกี่บาท</p>
                     <input type="number" name="kerry_express_fee"
                         value="<?php echo esc_attr(get_option('kerry_express_fee', 30)); ?>" />
@@ -102,7 +187,7 @@ function woocommerce_custom_shipping_setting_page()
                     <p>หากลูกค้าอยู่ในพื้นที่ห่างไกล เช่น 85 อำเภอห่างไกล จะคิดค่าบริการเพิ่มกี่บาท</p>
                     <input type="number" name="remote_surcharge"
                         value="<?php echo esc_attr(get_option('remote_surcharge', 50)); ?>" />
-
+    
                     <h2>อื่น ๆ</h2>
                     <p>ลูกค้าสามารถรับสินค้าเองที่ร้านได้</p>
                     <select name="enable_self_pickup" id="">
@@ -115,13 +200,72 @@ function woocommerce_custom_shipping_setting_page()
                         <option value="yes" <?php selected(get_option('no_discount_self_pickup'), 'yes') ?>>ใช่</option>
                         <option value="no" <?php selected(get_option('no_discount_self_pickup'), 'no') ?>>ไม่ใช่</option>
                     </select>
-                </div>
+                    <br><br>
+                    <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
+                </form>
             </div>
-            <?php submit_button('บันทึกการเปลี่ยนแปลง'); ?>
-        </form>
-        <hr>
-        <p>Github Repository: <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company"
-                target="_blank">github.com/sunny420x/woocommerce-custom-shipping-company</a></p>
+            <?php 
+            } else if(isset($_GET['option']) && $_GET['option'] == "packing_settings") {
+            ?>
+            <form action="options.php" method="post">
+                <?php
+                settings_fields('packing_shipping_settings_group');
+                ?>
+                <h1>การแพ็คสินค้า</h1>
+                <div style="padding: 25px 25px 25px 25px;">
+                    <table class="wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th>น้ำหนัก (กรัม)</th>
+                                <th>ค่าแพ็คสินค้า</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>0 - 1,000</td>
+                                <td><input type="number" name="packing_fee_0_1" value="<?php echo esc_attr(get_option('packing_fee_0_1')); ?>" /> บาท</td>
+                            </tr>
+                            <tr>
+                                <td>1,001 - 5,000</td>
+                                <td><input type="number" name="packing_fee_1_5" value="<?php echo esc_attr(get_option('packing_fee_1_5')); ?>" /> บาท</td>
+                            </tr>
+                            <tr>
+                                <td>5,001 - 20,000</td>
+                                <td><input type="number" name="packing_fee_5_20" value="<?php echo esc_attr(get_option('packing_fee_5_20')); ?>" /> บาท</td>
+                            </tr>
+                            <tr>
+                                <td>20,001 - 30,000</td>
+                                <td><input type="number" name="packing_fee_20_30" value="<?php echo esc_attr(get_option('packing_fee_20_30')); ?>" /> บาท</td>
+                            </tr>
+                            <tr>
+                                <td>30,001 กรัมขึ้นไป</td>
+                                <td><input type="number" name="packing_fee_30_plus" value="<?php echo esc_attr(get_option('packing_fee_30_plus')); ?>" /> บาท</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br><br>
+                    <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
+                </div>
+            </form>
+            <?php
+            } else {
+            ?>
+            <h1>WooCommerce Custom Shipping Setting</h1>
+            <div style="padding: 0 25px 25px 25px;">
+                <h2>ระบบนี้คืออะไร ?</h2>
+                <p>ระบบ WooCommerce Custom Shipping Setting
+                    คือระบบที่ออกแบบมาเพื่อรองรับการคิดราคาค่าแพ็คสินค้าโดยกำหนดแยกต่างหากจากปลั้กอินคิดค่าส่งสินค้าอื่น ๆ พร้อมตัวเลือก เลือกขนส่งเอง เช่น Kerry Express และ EMS เป็นต้น
+                </p>
+                <h2>วิธีการติดตั้ง</h2>
+                <p>
+                    สามารถติดตั้งปลั้กอินนี้ได้โดยการดาวน์โหลดไฟล์นี้จาก Github หน้านี้ และอัพโหลดลงในหน้า /wp-admin/plugin-install.php หลังจากอัพโหลด 
+                    และเปิดใช้งาน (Activate) ระบบจะทำการสร้างตารางและคอลัมน์ใหม่จากตารางเดิมโดยอัตโนมัติ
+                </p>
+            </div>
+            <?php
+            }
+            ?>
+        </div>
     </div>
     <?php
 }
@@ -131,31 +275,36 @@ function woocommerce_custom_shipping_setting_init()
 {
     register_setting('shipping_settings_group', 'enable_self_pickup');
 
-    register_setting('shipping_settings_group', 'ems_fee');
+    register_setting('ems_shipping_settings_group', 'ems_fee');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p1');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p2');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p3');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p4');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p5');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p6');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p7');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p8');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p9');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p10');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p11');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p12');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p13');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p14');
+    register_setting('ems_shipping_settings_group', 'ems_fee_p15');
+    register_setting('ems_shipping_settings_group', 'ems_fee_after_6kg');
+    
+    register_setting('packing_shipping_settings_group', 'packing_fee_0_1');
+    register_setting('packing_shipping_settings_group', 'packing_fee_1_5');
+    register_setting('packing_shipping_settings_group', 'packing_fee_5_20');
+    register_setting('packing_shipping_settings_group', 'packing_fee_20_30');
+    register_setting('packing_shipping_settings_group', 'packing_fee_30_plus');
+    
     register_setting('shipping_settings_group', 'packing_fee');
     register_setting('shipping_settings_group', 'kerry_express_fee');
     register_setting('shipping_settings_group', 'remote_surcharge');
-
-    register_setting('shipping_settings_group', 'ems_fee_p1');
-    register_setting('shipping_settings_group', 'ems_fee_p2');
-    register_setting('shipping_settings_group', 'ems_fee_p3');
-    register_setting('shipping_settings_group', 'ems_fee_p4');
-    register_setting('shipping_settings_group', 'ems_fee_p5');
-    register_setting('shipping_settings_group', 'ems_fee_p6');
-    register_setting('shipping_settings_group', 'ems_fee_p7');
-    register_setting('shipping_settings_group', 'ems_fee_p8');
-    register_setting('shipping_settings_group', 'ems_fee_p9');
-    register_setting('shipping_settings_group', 'ems_fee_p10');
-    register_setting('shipping_settings_group', 'ems_fee_p11');
-    register_setting('shipping_settings_group', 'ems_fee_p12');
-    register_setting('shipping_settings_group', 'ems_fee_p13');
-    register_setting('shipping_settings_group', 'ems_fee_p14');
-    register_setting('shipping_settings_group', 'ems_fee_p15');
-    register_setting('shipping_settings_group', 'ems_fee_after_6kg');
-
     register_setting('shipping_settings_group', 'remote_areas_list');
-
     register_setting('shipping_settings_group', 'no_discount_self_pickup');
+    register_setting('shipping_settings_group', 'enable_kerry_express');
 }
 
 add_filter('woocommerce_package_rates', 'combined_shipping_methods', 10, 2);
@@ -163,7 +312,19 @@ function combined_shipping_methods($rates, $package)
 {
     $new_rates = array();
     $total_weight = WC()->cart->get_cart_contents_weight(); // กรัม
-    $packing_fee = (float) get_option('packing_fee', 60); // ค่าแพ็ค
+    //$packing_fee = (float) get_option('packing_fee', 60); // ค่าแพ็ค
+
+    if($total_weight <= 1000) {
+        $packing_fee = (float) get_option('packing_fee_0_1');
+    } else if($total_weight <= 5000) {
+        $packing_fee = (float) get_option('packing_fee_1_5');
+    } else if($total_weight <= 20000) {
+        $packing_fee = (float) get_option('packing_fee_5_20');
+    } else if($total_weight <= 30000) {
+        $packing_fee = (float) get_option('packing_fee_20_30');
+    } else if($total_weight > 30001) {
+        $packing_fee = (float) get_option('packing_fee_30_plus');
+    }
 
     // 1. ดึงรหัสไปรษณีย์
     $destination_zip = $package['destination']['postcode'];
@@ -183,13 +344,16 @@ function combined_shipping_methods($rates, $package)
             $original_rate = clone $rate;
             $original_rate->label = 'ค่าจัดส่ง (เลือกอัตโนมัติ)';
             $original_rate->cost += $remote_surcharge;
+            $original_rate->cost += $packing_fee;
             $new_rates[$rate_id] = $original_rate;
 
-            $kerry_rate = clone $rate;
-            $kerry_rate->id = $rate_id . '_kerry'; // เติม ID ต่อท้าย
-            $kerry_rate->label = 'Kerry Express';
-            $kerry_rate->cost += $remote_surcharge + (float) get_option('kerry_express_fee', 30);
-            $new_rates[$kerry_rate->id] = $kerry_rate;
+            if(get_option("enable_kerry_express") == "yes") {
+                $kerry_rate = clone $rate;
+                $kerry_rate->id = $rate_id . '_kerry'; // เติม ID ต่อท้าย
+                $kerry_rate->label = 'Kerry Express';
+                $kerry_rate->cost += $remote_surcharge + (float) get_option('kerry_express_fee', 30);
+                $new_rates[$kerry_rate->id] = $kerry_rate;
+            }
 
             //Thailand Post ส่งได้มากสุดแค่ 20kg
             if ($total_weight <= 20000) {
