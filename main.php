@@ -92,6 +92,7 @@ function woocommerce_custom_shipping_setting_page()
         <div class="leftside">
             <h1>WooCommerce Custom Shipping</h1>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=ems">🚚 EMS</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost">🚚 คิดค่าขนส่งคงที่ตามประเภทสินค้า</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=packing_settings">📦 การแพ็คสินค้า</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=settings">🔧 ตั้งค่าทั่วไป</a>
         </div>
@@ -166,37 +167,49 @@ function woocommerce_custom_shipping_setting_page()
                     <?php
                     settings_fields('shipping_settings_group');
                     ?>
-                    <h2>Kerry Express</h2>
-                    <p>เปิดใช้งานขนส่ง Kerry Express</p>
-                    <select name="enable_kerry_express" id="">
-                        <option value="yes" <?php selected(get_option('enable_kerry_express'), 'yes') ?>>ใช่</option>
-                        <option value="no" <?php selected(get_option('enable_kerry_express'), 'no') ?>>ไม่ใช่</option>
-                    </select>
-                    <p>หากลูกค้าเลือกขนส่ง Kerry Express จะบวกเพิ่มเป็นจำนวนกี่บาท</p>
-                    <input type="number" name="kerry_express_fee"
-                        value="<?php echo esc_attr(get_option('kerry_express_fee', 30)); ?>" />
-                    <h2>พื้นที่ห่างไกล (Remote Areas)</h2>
-                    <p>กรอกรหัสไปรษณีย์ที่ต้องการบวกค่าบริการเพิ่ม (แยกด้วยเครื่องหมายคอมม่า หรือขึ้นบรรทัดใหม่)</p>
-                    <textarea name="remote_areas_list" rows="10" cols="50" class="large-text" style="font-family: monospace;"><?php 
-                        echo esc_textarea(get_option('remote_areas_list', '50240, 50250, 50260')); 
-                    ?></textarea>
-                    <p>หากลูกค้าอยู่ในพื้นที่ห่างไกล เช่น 85 อำเภอห่างไกล จะคิดค่าบริการเพิ่มกี่บาท</p>
-                    <input type="number" name="remote_surcharge"
-                        value="<?php echo esc_attr(get_option('remote_surcharge', 50)); ?>" />
-    
-                    <h2>อื่น ๆ</h2>
-                    <p>ลูกค้าสามารถรับสินค้าเองที่ร้านได้</p>
-                    <select name="enable_self_pickup" id="">
-                        <option value="yes" <?php if(get_option('enable_self_pickup', 'no') == "yes") { echo "selected"; } ?>>เปิด</option>
-                        <option value="no" <?php if(get_option('enable_self_pickup', 'no') == "no") { echo "selected"; } ?>>ปิด</option>
-                    </select>
+                    <div style="display: flex; gap: 20px;">
+                        <div>
+                            <h2>Kerry Express</h2>
+                            <p>เปิดใช้งานขนส่ง Kerry Express</p>
+                            <select name="enable_kerry_express" id="">
+                                <option value="yes" <?php selected(get_option('enable_kerry_express'), 'yes') ?>>ใช่</option>
+                                <option value="no" <?php selected(get_option('enable_kerry_express'), 'no') ?>>ไม่ใช่</option>
+                            </select>
+                            <p>หากลูกค้าเลือกขนส่ง Kerry Express จะบวกเพิ่มเป็นจำนวนกี่บาท</p>
+                            <input type="number" name="kerry_express_fee"
+                                value="<?php echo esc_attr(get_option('kerry_express_fee', 30)); ?>" />
+                            <h2>พื้นที่ห่างไกล (Remote Areas)</h2>
+                            <p>กรอกรหัสไปรษณีย์ที่ต้องการบวกค่าบริการเพิ่ม (แยกด้วยเครื่องหมายคอมม่า หรือขึ้นบรรทัดใหม่)</p>
+                            <textarea name="remote_areas_list" rows="10" cols="50" class="large-text" style="font-family: monospace;"><?php 
+                                echo esc_textarea(get_option('remote_areas_list', '50240, 50250, 50260')); 
+                            ?></textarea>
+                            <p>หากลูกค้าอยู่ในพื้นที่ห่างไกล เช่น 85 อำเภอห่างไกล จะคิดค่าบริการเพิ่มกี่บาท</p>
+                            <input type="number" name="remote_surcharge"
+                                value="<?php echo esc_attr(get_option('remote_surcharge', 50)); ?>" />
+                        </div>
+                        <div>
+                            <h2>อื่น ๆ</h2>
+                            <p>ลูกค้าสามารถรับสินค้าเองที่ร้านได้</p>
+                            <select name="enable_self_pickup" id="">
+                                <option value="yes" <?php if(get_option('enable_self_pickup', 'no') == "yes") { echo "selected"; } ?>>เปิด</option>
+                                <option value="no" <?php if(get_option('enable_self_pickup', 'no') == "no") { echo "selected"; } ?>>ปิด</option>
+                            </select>
+                            <br>
+                            <p>การรับสินค้าที่ร้านจะไม่ได้รับส่วนลดจากคูปอง</p>
+                            <select name="no_discount_self_pickup" id="">
+                                <option value="yes" <?php selected(get_option('no_discount_self_pickup'), 'yes') ?>>ใช่</option>
+                                <option value="no" <?php selected(get_option('no_discount_self_pickup'), 'no') ?>>ไม่ใช่</option>
+                            </select>
+                            <br>
+                            <h2>เปิด/ปิด ใช้งานการคิดค่าส่งตามประเภทสินค้า</h2>
+                            <select name="enable_category_based_shipping_cost" id="">
+                                <option value="yes" <?php selected(get_option('enable_category_based_shipping_cost'), 'yes'); ?>>เปิดใช้งาน</option>
+                                <option value="no" <?php selected(get_option('enable_category_based_shipping_cost'), 'no'); ?>>ปิดใช้งาน</option>
+                            </select>
+                            <br><br>
+                        </div>
+                    </div>
                     <br>
-                    <p>การรับสินค้าที่ร้านจะไม่ได้รับส่วนลดจากคูปอง</p>
-                    <select name="no_discount_self_pickup" id="">
-                        <option value="yes" <?php selected(get_option('no_discount_self_pickup'), 'yes') ?>>ใช่</option>
-                        <option value="no" <?php selected(get_option('no_discount_self_pickup'), 'no') ?>>ไม่ใช่</option>
-                    </select>
-                    <br><br>
                     <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
                 </form>
             </div>
@@ -243,6 +256,142 @@ function woocommerce_custom_shipping_setting_page()
                     <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
                 </div>
             </form>
+            <?php
+            } else if(isset($_GET['option']) && $_GET['option'] == "category_based_shipping_cost") {
+                //Page
+                if (isset($_GET['newProfile'])) {
+                    //Action
+                    if (isset($_POST['slug'])) {
+                        $category_based_shipping[] = array(
+                            'slug' => sanitize_text_field($_POST['slug']),
+                            'cost' => sanitize_text_field($_POST['cost'])
+                        );
+
+                        update_option('category_based_shipping_list', $category_based_shipping);
+                        $slug = sanitize_text_field($_POST['slug']);
+                        wp_redirect(admin_url("admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost"));
+                        exit;
+                    }
+            ?>
+            <h1>เพิ่มประเภทและค่าจัดส่งคงที่ใหม่</h1>
+            <div style="padding: 25px 25px 25px 25px;">
+                <form action="" method="POST">
+                    <label for="">Slug:</label>
+                    <input type="text" name="slug" style="width: 500px;">
+                    <br><br>
+                    <label for="">ค่าจัดส่ง:</label>
+                    <input type="number" name="cost"> บาท
+                    <br><br>
+                    <button class="button button-primary" style="width: 100%;" type="submit">เพิ่มข้อมูล</button>
+                </form>
+            </div>
+            <?php
+                }
+
+                if (isset($_GET['delete'])) {
+                    $profiles = get_option('category_based_shipping_list', array());
+                    $target_name = $_GET['delete'];
+                    $found = false;
+
+                    foreach ($profiles as $index => $profile) {
+                        if ($profile['slug'] === $target_name) {
+                            unset($profiles[$index]);
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    if ($found) {
+                        $profiles = array_values($profiles);
+
+                        update_option('category_based_shipping_list', $profiles);
+
+                        wp_redirect(admin_url('admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost'));
+                        exit;
+                    }
+                }
+
+                if(isset($_GET['edit'])) {
+                    $profiles = get_option('category_based_shipping_list', array());
+
+                    $selected_profile = array_find($profiles, function ($profile) {
+                        return $profile['slug'] === $_GET['edit'];
+                    });
+
+                    if (isset($_POST['slug'])) {
+                        $profile_name_to_find = $_GET['edit'];
+                        $found = false;
+
+                        foreach ($profiles as &$profile) {
+                            if ($profile['slug'] === $profile_name_to_find) {
+
+                                // อัปเดตค่าจากฟอร์มลงไปใน Array
+                                $profile['slug'] = sanitize_text_field($_POST['slug']);
+                                $profile['cost'] = sanitize_text_field($_POST['cost']);
+
+                                $found = true;
+                                break;
+                            }
+                        }
+
+                        if (!$found) {
+                            $profiles[] = array(
+                                'slug' => sanitize_text_field($_POST['slug']),
+                                'cost' => sanitize_text_field($_POST['cost'])
+                            );
+                        }
+
+                        update_option('category_based_shipping_list', $profiles);
+                        $slug = sanitize_text_field($_POST['slug']);
+                        wp_redirect(admin_url("admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost&edit=$slug"));
+                        exit;
+                    }
+                ?>
+                <h1>แก้ไขประเภทและค่าจัดส่งคงที่ใหม่</h1>
+                <div style="padding: 25px 25px 25px 25px;">
+                    <form action="" method="POST">
+                        <label for="">Slug:</label>
+                        <input type="text" name="slug" style="width: 500px;" value="<?=$selected_profile['slug'];?>">
+                        <br><br>
+                        <label for="">ค่าจัดส่ง:</label>
+                        <input type="number" name="cost" value="<?=$selected_profile['cost'];?>"> บาท
+                        <br><br>
+                        <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
+                    </form>
+                </div>
+            <?php
+                }
+            ?>
+            <h1>ใช้งานการคิดค่าส่งตามประเภทสินค้า (Product Category Based Shipping Cost)</h1>
+            <div style="padding: 25px 25px 25px 25px;">
+                <button class="button" style="width: 100%;" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost&newProfile'">➕ เพิ่มประเภทและค่าจัดส่งคงที่ใหม่</button>
+                <table class="wp-list-table widefat fixed striped" style="margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th>Slug ของสินค้า</th>
+                            <th>ค่าส่ง (คงที่)</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $category_based_shipping = get_option('category_based_shipping_list', array());
+                        foreach($category_based_shipping as $row) {
+                        ?>
+                        <tr>
+                            <td><?php echo $row['slug']; ?></td>
+                            <td><?php echo $row['cost']; ?></td>
+                            <td>
+                                <button class="button" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost&edit=<?=$row['slug'];?>'">แก้ไข</button>
+                                <button class="button" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost&delete=<?=$row['slug'];?>'">ลบ</button>
+                            </td>
+                        </tr>
+                        <?php
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
             <?php
             } else {
             ?>
@@ -300,6 +449,9 @@ function woocommerce_custom_shipping_setting_init()
     register_setting('shipping_settings_group', 'remote_areas_list');
     register_setting('shipping_settings_group', 'no_discount_self_pickup');
     register_setting('shipping_settings_group', 'enable_kerry_express');
+
+    register_setting('shipping_settings_group', 'enable_category_based_shipping_cost');
+    register_setting('category_shipping_settings_group', 'category_based_shipping_list');
 }
 
 add_filter('woocommerce_package_rates', 'combined_shipping_methods', 10, 2);
@@ -336,11 +488,62 @@ function combined_shipping_methods($rates, $package)
         if (strpos($rate_id, 'wbs') !== false) {
 
             $original_rate = clone $rate;
+            
+            if(get_option('enable_category_based_shipping_cost') == "yes") {
+                $category_based_shipping = get_option('category_based_shipping_list', array());
+                
+                $total_category_cost = 0;
+                $has_custom_cat = false;
+
+                // 1. ลูปสินค้าในตะกร้าทีละชิ้น
+                foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
+                    $product_id = $cart_item['product_id'];
+                    $quantity = $cart_item['quantity']; // จำนวนชิ้นของสินค้าตัวนี้
+
+                    // ตั้งค่าเริ่มต้นสำหรับสินค้าชิ้นนี้: ให้ค่าส่งแพงที่สุดเริ่มต้นที่ 0
+                    $highest_item_cost = 0;
+                    $item_matched = false;
+
+                    // 2. ตรวจสอบสินค้าชิ้นนี้กับทุกโปรไฟล์หมวดหมู่ที่ตั้งไว้
+                    foreach($category_based_shipping as $profile) {                     
+                        $target_slug = trim($profile['slug']); 
+
+                        // ถ้าสินค้าชิ้นนี้ตรงกับหมวดหมู่พิเศษนี้
+                        if ( has_term($target_slug, 'product_cat', $product_id ) ) {
+                            $item_matched = true;
+                            $current_cat_cost = (float)$profile['cost'];
+
+                            // ถ้าค่าส่งของหมวดนี้ แพงกว่าหมวดก่อนหน้าของสินค้าชิ้นเดียวกัน ให้ดึงค่านี้มาแทน
+                            if ($current_cat_cost > $highest_item_cost) {
+                                $highest_item_cost = $current_cat_cost;
+                            }
+                        }
+                    }
+
+                    // 3. หลังจากเช็คครบทุกหมวดของสินค้าชิ้นนี้แล้ว ค่อยเอาเรทที่แพงที่สุดไปคูณจำนวนชิ้น
+                    if ($item_matched) {
+                        $has_custom_cat = true;
+                        
+                        // เอาค่าส่งที่แพงที่สุดของสินค้าชิ้นนี้ × จำนวนชิ้น
+                        $item_shipping_cost = $highest_item_cost * $quantity;
+                        
+                        // บวกสะสมเข้าไปในยอดรวมทั้งหมดของตะกร้า
+                        $total_category_cost += $item_shipping_cost;
+                    }
+                }
+
+                // 3. ถ้ามีสินค้าหมวดพิเศษอยู่ในตะกร้าและมียอดเงิน
+                if ($has_custom_cat && $total_category_cost > 0) {
+                    // หักดิบค่าน้ำหนักทิ้ง แล้วแทนที่ด้วยยอดสะสมคูณจำนวนชิ้นของทุกหมวดหมู่รวมกัน
+                    $original_rate->cost = $total_category_cost; 
+                }
+            }
+            
             $original_rate->label = 'ค่าจัดส่ง (เลือกอัตโนมัติ)';
             $original_rate->cost += $remote_surcharge;
             $original_rate->cost += $packing_fee;
             $new_rates[$rate_id] = $original_rate;
-
+                
             if(get_option("enable_kerry_express") == "yes") {
                 $kerry_rate = clone $rate;
                 $kerry_rate->id = $rate_id . '_kerry'; // เติม ID ต่อท้าย
