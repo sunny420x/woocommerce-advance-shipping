@@ -49,6 +49,9 @@ function woocommerce_custom_shipping_setting_page()
             width: 100%;
             text-decoration: none;
         }
+        .leftside a.active {
+            background: #fff;
+        }
         .leftside a:hover {
             background: #fff;
             cursor: pointer;
@@ -91,11 +94,11 @@ function woocommerce_custom_shipping_setting_page()
     <div class="wrap" style="display: flex;">            
         <div class="leftside">
             <h1>WooCommerce Advance Shipping</h1>
-            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=default">🚩 ค่าเริ่มต้น</a>
-            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=ems">🚚 EMS</a>
-            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost">🚚 คิดค่าขนส่งคงที่ตามประเภทสินค้า</a>
-            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=packing_settings">📦 การแพ็คสินค้า</a>
-            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=settings">🔧 ตั้งค่าทั่วไป</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=default" <?php if(isset($_GET['option']) && $_GET['option'] == "default") { echo "class='active'"; } ?>>🚩 ค่าเริ่มต้น</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=ems" <?php if(isset($_GET['option']) && $_GET['option'] == "ems") { echo "class='active'"; } ?>>🚚 EMS</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost" <?php if(isset($_GET['option']) && $_GET['option'] == "category_based_shipping_cost") { echo "class='active'"; } ?>>🚚 คิดค่าขนส่งคงที่ตามประเภทสินค้า</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=packing_settings" <?php if(isset($_GET['option']) && $_GET['option'] == "packing_settings") { echo "class='active'"; } ?>>📦 การแพ็คสินค้า</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=settings" <?php if(isset($_GET['option']) && $_GET['option'] == "settings") { echo "class='active'"; } ?>>🔧 ตั้งค่าทั่วไป</a>
         </div>
         <div class="container">
             <?php
@@ -197,10 +200,41 @@ function woocommerce_custom_shipping_setting_page()
                         exit;
                     }
                 }
+
+                if(isset($_GET['adjustPrice'])) {
+                    if(isset($_POST['adjustPrice'])) {
+                        $adjustAmount = (float) sanitize_text_field( $_POST['adjustAmount'] );
+                        $profiles = get_option('default_shipping_pricing', array());
+                        foreach ($profiles as &$profile) {
+                            $profile['cost'] = (float) $profile['cost'] + $adjustAmount;
+                        }
+                        unset($profile); // break the reference
+
+                        update_option('default_shipping_pricing', $profiles);
+                        wp_redirect(admin_url("admin.php?page=woocommerce-custom-shipping-settings&option=default"));
+                        exit;
+                    }
+                ?>
+                <h1>ปรับราคาค่าขนส่ง</h1>
+                <div style="padding: 25px 25px 25px 25px;">
+                    <form action="" method="post">
+                        <label for="end">ปรับเพิ่มจากเดิมจำนวน: </label><br>
+                        <input type="number" name="adjustAmount" id="adjustAmount" style="width: 500px;"> บาท<br>
+                        <br>
+                        <input type="submit" value="ปรับราคาค่าขนส่ง" class="button botton-outline-primary" name="adjustPrice">
+                    </form>
+                </div>
+                <?php
+                    return;
+                }
                 ?>
             <h1>ช่วงค่าขนส่งตามน้ำหนักต่าง ๆ</h1>
             <div style="padding: 25px 25px 25px 25px;">
-                <button class="button botton-outline-primary" style="width: 100%;" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&newProfile'">➕ เพิ่มช่วงค่าขนส่งใหม่</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="button botton-outline-primary" style="width: 50%;" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&newProfile'">➕ เพิ่มช่วงค่าขนส่งใหม่</button>
+                    <button class="button botton-outline-primary" style="width: 50%;" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&adjustPrice'">➕ ปรับราคา</button>
+                </div>
+                <br>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
