@@ -83,8 +83,8 @@ function woocommerce_custom_shipping_setting_page()
     <div class="white-label-zone no-print">
         <span style="padding: 60px 10px 60px 40px;float: left;font-size: 60px;">🚚</span>
         <div style="padding: 20px 0;">
-            <h1>WooCommerce Custom Shipping System</h1>
-            <p>ระบบเลือกบริษัทขนส่งเองสำหรับลูกค้า และคำนวณค่าขนส่ง ค่าแพ็คสินค้า ตามน้ำหนัก
+            <h1>WooCommerce Advance Shipping System</h1>
+            <p>ระบบคำนวณค่าขนส่ง ค่าแพ็คสินค้า ตามน้ำหนัก
                 <br>
                 <strong>Github Repository:</strong> <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company" target="_blank">https://github.com/sunny420x/woocommerce-custom-shipping-company</a>
             </p>
