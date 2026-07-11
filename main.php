@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Custom Shipping Company For Woocommerce
+ * Plugin Name: Advance Shipping Company For Woocommerce
  * Description: ระบบเลือกบริษัทขนส่งเองสำหรับลูกค้า ใช้ร่วมกับ Weight Based Shipping for WooCommerce
  * Version: 1.0
  * Author: Jirakit Pawnsakunrungrot
@@ -8,9 +8,9 @@
  * Plugin URI: https://github.com/sunny420x/woocommerce-custom-shipping-company
  */
 
-add_action('admin_menu', 'worldchem_custom_shipping_company_menu');
+add_action('admin_menu', 'custom_shipping_company_menu');
 
-function worldchem_custom_shipping_company_menu()
+function custom_shipping_company_menu()
 {
     add_menu_page(
         'จัดการค่าบริการบริษัทขนส่ง', // Title ของหน้า
@@ -90,7 +90,8 @@ function woocommerce_custom_shipping_setting_page()
     </div>
     <div class="wrap" style="display: flex;">            
         <div class="leftside">
-            <h1>WooCommerce Custom Shipping</h1>
+            <h1>WooCommerce Advance Shipping</h1>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=default">🚩 ค่าเริ่มต้น</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=ems">🚚 EMS</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost">🚚 คิดค่าขนส่งคงที่ตามประเภทสินค้า</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=packing_settings">📦 การแพ็คสินค้า</a>
@@ -98,7 +99,142 @@ function woocommerce_custom_shipping_setting_page()
         </div>
         <div class="container">
             <?php
-            if(isset($_GET['option']) && $_GET['option'] == "ems") {
+            if(isset($_GET['option']) && $_GET['option'] == "default") {
+                if (isset($_GET['newProfile'])) {
+                    if (isset($_POST['addProfile'])) {
+                        $id = rand();
+                        $default_shipping_pricing = get_option('default_shipping_pricing', array());
+                        $default_shipping_pricing[] = array(
+                            'id' => $id,
+                            'start' => sanitize_text_field($_POST['start']),
+                            'end' => sanitize_text_field($_POST['end']),
+                            'cost' => sanitize_text_field($_POST['cost'])
+                        );
+
+                        update_option('default_shipping_pricing', $default_shipping_pricing);
+                        wp_redirect(admin_url("admin.php?page=woocommerce-custom-shipping-settings&option=default"));
+                        exit;
+                    }
+            ?>
+                <h1>เพิ่มช่วงค่าขนส่งใหม่</h1>
+                <div style="padding: 25px 25px 25px 25px;">
+                    <form action="" method="post">
+                        <label for="start">น้ำหนักตั้งแต่: </label><br>
+                        <input type="number" name="start" id="start" style="width: 500px;"> กรัม<br>
+                        <label for="end">ถึงน้ำหนัก: </label><br>
+                        <input type="number" name="end" id="end" style="width: 500px;"> กรัม<br>    
+                        <label for="end">ค่าขนส่ง: </label><br>
+                        <input type="number" name="cost" id="cost" style="width: 500px;"> บาท<br>
+                        <br>
+                        <input type="submit" value="เพิ่มช่วงค่าขนส่งใหม่" class="button botton-outline-primary" name="addProfile">
+                    </form>
+                </div>
+            <?php
+                    return;
+                }
+            ?>
+            <?php  
+                if(isset($_GET['edit'])) {
+                    $profiles = get_option('default_shipping_pricing', array());
+                    $id = $_GET['edit'];
+
+                    $selected_profile = array_find($profiles, function ($profile) {
+                        return $profile['id'] == $_GET['edit'];
+                    });
+
+                    if (isset($_POST['editProfile'])) {
+                        foreach ($profiles as &$profile) {
+                            if ($profile['id'] == $id) {
+
+                                $profile['start'] = sanitize_text_field($_POST['start']);
+                                $profile['end'] = sanitize_text_field($_POST['end']);
+                                $profile['cost'] = sanitize_text_field($_POST['cost']);
+                                break;
+                            }
+                        }
+
+                        update_option('default_shipping_pricing', $profiles);
+                        wp_redirect(admin_url("admin.php?page=woocommerce-custom-shipping-settings&option=default&edit=$id"));
+                        exit;
+                    }
+                ?>
+                <h1>แก้ไขค่าขนส่ง</h1>
+                <div style="padding: 25px 25px 25px 25px;">
+                    <form action="" method="post">
+                        <label for="start">น้ำหนักตั้งแต่: </label><br>
+                        <input type="number" name="start" id="start" value="<?=$selected_profile['start'];?>" style="width: 500px;"> กรัม<br>
+                        <label for="end">ถึงน้ำหนัก: </label><br>
+                        <input type="number" name="end" id="end" value="<?=$selected_profile['end'];?>" style="width: 500px;"> กรัม<br>
+                        <label for="end">ค่าขนส่ง: </label><br>
+                        <input type="number" name="cost" id="cost" value="<?=$selected_profile['cost'];?>" style="width: 500px;"> บาท<br>
+                        <br>
+                        <input type="submit" value="แก้ไขค่าขนส่ง" class="button botton-outline-primary" name="editProfile">
+                    </form>
+                </div>
+                <?php
+                    return;
+                }
+
+                if (isset($_GET['delete'])) {
+                    $profiles = get_option('default_shipping_pricing', array());
+                    $id = $_GET['delete'];
+                    $found = false;
+
+                    foreach ($profiles as $index => $profile) {
+                        if ($profile['id'] == $id) {
+                            unset($profiles[$index]);
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    if ($found) {
+                        $profiles = array_values($profiles);
+
+                        update_option('default_shipping_pricing', $profiles);
+
+                        wp_redirect(admin_url('admin.php?page=woocommerce-custom-shipping-settings&option=default'));
+                        exit;
+                    }
+                }
+                ?>
+            <h1>ช่วงค่าขนส่งตามน้ำหนักต่าง ๆ</h1>
+            <div style="padding: 25px 25px 25px 25px;">
+                <button class="button botton-outline-primary" style="width: 100%;" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&newProfile'">➕ เพิ่มช่วงค่าขนส่งใหม่</button>
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>ตั้งแต่น้ำหนัก (กรัม)</th>
+                            <th>ถึงน้ำหนัก (กรัม)</th>
+                            <th>ค่าขนส่ง (บาท)</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $profiles = get_option('default_shipping_pricing', array());
+                        foreach($profiles as $profile) {
+                            $id = $profile['id'];
+                        ?>
+                        <tr>
+                            <td><?=$id;?></td>
+                            <td><?=$profile['start'];?></td>
+                            <td><?=$profile['end'];?></td>
+                            <td><?=$profile['cost'];?></td>
+                            <td>
+                                <button class="button button-outline-primary" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&edit=<?=$id?>'">แก้ไข</button>
+                                <button class="button button-outline-danger" onclick="if(confirm('คุณต้องการลบช่วงราคานี้หรือไม่ ?')) { window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&delete=<?=$id?>'; }">ลบ</button>
+                            </td>
+                        </tr>
+                        <?php
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php
+            } else if(isset($_GET['option']) && $_GET['option'] == "ems") {
             ?>
             <h1>ไปรษณีย์ไทย (EMS)</h1>
             <div style="padding: 0px 25px 25px 25px;">
@@ -453,6 +589,8 @@ function woocommerce_custom_shipping_setting_init()
 
     register_setting('shipping_settings_group', 'enable_category_based_shipping_cost');
     register_setting('category_shipping_settings_group', 'category_based_shipping_list');
+
+    register_setting( 'default_shipping_settings_group', 'default_shipping_pricing' );
 }
 
 add_filter('woocommerce_package_rates', 'combined_shipping_methods', 10, 2);
@@ -485,153 +623,136 @@ function combined_shipping_methods($rates, $package)
     $is_remote = in_array($destination_zip, $remote_areas);
     $remote_surcharge = $is_remote ? (float) get_option('remote_surcharge', 60) : 0; // ถ้าใช่ บวก 50 ถ้าไม่ใช่ บวก 0
 
+    // Keep any non-Weight-Based rates intact
     foreach ($rates as $rate_id => $rate) {
-        if (strpos($rate_id, 'wbs') !== false) {
-
-            $original_rate = clone $rate;
-            
-            if(get_option('enable_category_based_shipping_cost') == "yes") {
-                $category_based_shipping = get_option('category_based_shipping_list', array());
-                
-                $total_category_cost = 0;
-                $has_custom_cat = false;
-
-                // 1. ลูปสินค้าในตะกร้าทีละชิ้น
-                foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
-                    $product_id = $cart_item['product_id'];
-                    $quantity = $cart_item['quantity']; // จำนวนชิ้นของสินค้าตัวนี้
-
-                    // ตั้งค่าเริ่มต้นสำหรับสินค้าชิ้นนี้: ให้ค่าส่งแพงที่สุดเริ่มต้นที่ 0
-                    $highest_item_cost = 0;
-                    $item_matched = false;
-
-                    // 2. ตรวจสอบสินค้าชิ้นนี้กับทุกโปรไฟล์หมวดหมู่ที่ตั้งไว้
-                    foreach($category_based_shipping as $profile) {                     
-                        $target_slug = trim($profile['slug']); 
-
-                        // ถ้าสินค้าชิ้นนี้ตรงกับหมวดหมู่พิเศษนี้
-                        if ( has_term($target_slug, 'product_cat', $product_id ) ) {
-                            $item_matched = true;
-                            $current_cat_cost = (float)$profile['cost'];
-
-                            // ถ้าค่าส่งของหมวดนี้ แพงกว่าหมวดก่อนหน้าของสินค้าชิ้นเดียวกัน ให้ดึงค่านี้มาแทน
-                            if ($current_cat_cost > $highest_item_cost) {
-                                $highest_item_cost = $current_cat_cost;
-                            }
-                        }
-                    }
-
-                    // 3. หลังจากเช็คครบทุกหมวดของสินค้าชิ้นนี้แล้ว ค่อยเอาเรทที่แพงที่สุดไปคูณจำนวนชิ้น
-                    if ($item_matched) {
-                        $has_custom_cat = true;
-                        
-                        // เอาค่าส่งที่แพงที่สุดของสินค้าชิ้นนี้ × จำนวนชิ้น
-                        $item_shipping_cost = $highest_item_cost * $quantity;
-                        
-                        // บวกสะสมเข้าไปในยอดรวมทั้งหมดของตะกร้า
-                        $total_category_cost += $item_shipping_cost;
-                    }
-                }
-
-                // 3. ถ้ามีสินค้าหมวดพิเศษอยู่ในตะกร้าและมียอดเงิน
-                if ($has_custom_cat && $total_category_cost > 0) {
-                    // หักดิบค่าน้ำหนักทิ้ง แล้วแทนที่ด้วยยอดสะสมคูณจำนวนชิ้นของทุกหมวดหมู่รวมกัน
-                    $original_rate->cost = $total_category_cost; 
-                }
-            }
-            
-            $original_rate->label = 'ค่าจัดส่ง (เลือกอัตโนมัติ)';
-            $original_rate->cost += $remote_surcharge;
-            $original_rate->cost += $packing_fee;
-            $new_rates[$rate_id] = $original_rate;
-                
-            if(get_option("enable_kerry_express") == "yes") {
-                $kerry_rate = clone $rate;
-                $kerry_rate->id = $rate_id . '_kerry'; // เติม ID ต่อท้าย
-                $kerry_rate->label = 'Kerry Express';
-                $kerry_rate->cost += $remote_surcharge + (float) get_option('kerry_express_fee', 30);
-                $new_rates[$kerry_rate->id] = $kerry_rate;
-            }
-
-            //Thailand Post ส่งได้มากสุดแค่ 20kg
-            if ($total_weight <= 20000) {
-                $ems = clone $rate;
-                $ems->id = $rate_id . '_ems';
-                $ems->label = 'ไปรษณีย์ไทย (EMS)';
-
-                $w = $total_weight; // หน่วยเป็นกรัม
-                $ems_cost = 0;
-
-                if ($w <= 20) {
-                    $ems_cost = (float) get_option('ems_fee_p1', 32);
-                } elseif ($w <= 100) {
-                    $ems_cost = (float) get_option('ems_fee_p2', 37);
-                } elseif ($w <= 250) {
-                    $ems_cost = (float) get_option('ems_fee_p3', 42);
-                } elseif ($w <= 500) {
-                    $ems_cost = (float) get_option('ems_fee_p4', 52);
-                } elseif ($w <= 1000) {
-                    $ems_cost = (float) get_option('ems_fee_p5', 67);
-                } elseif ($w <= 1500) {
-                    $ems_cost = (float) get_option('ems_fee_p6', 82);
-                } elseif ($w <= 2000) {
-                    $ems_cost = (float) get_option('ems_fee_p7', 97);
-                } elseif ($w <= 2500) {
-                    $ems_cost = (float) get_option('ems_fee_p8', 100);
-                } elseif ($w <= 3000) {
-                    $ems_cost = (float) get_option('ems_fee_p9', 105);
-                } elseif ($w <= 3500) {
-                    $ems_cost = (float) get_option('ems_fee_p10', 110);
-                } elseif ($w <= 4000) {
-                    $ems_cost = (float) get_option('ems_fee_p11', 120);
-                } elseif ($w <= 4500) {
-                    $ems_cost = (float) get_option('ems_fee_p12', 120);
-                } elseif ($w <= 5000) {
-                    $ems_cost = (float) get_option('ems_fee_p13', 120);
-                } elseif ($w <= 5500) {
-                    $ems_cost = (float) get_option('ems_fee_p14', 130);
-                } elseif ($w <= 6000) {
-                    $ems_cost = (float) get_option('ems_fee_p15', 140);
-                } else {
-                    // ถ้าเกิน 6 กิโล ให้ใช้เรทสุดท้าย หรือจะบวกเพิ่มกิโลละ 20 บาทก็ได้ครับ
-                    $extra_kg = ceil(($w - 6000) / 1000);
-                    $ems_cost = (float) get_option('ems_fee_p15', 140) + ($extra_kg * get_option('ems_fee_after_6kg', 35));
-                }
-
-                $ems->cost = $ems_cost + $packing_fee + $remote_surcharge;
-                $new_rates[$ems->id] = $ems;
-            }
-
-            if(get_option('enable_self_pickup', "no") == "yes") {
-                $self_pickup = clone $rate;
-                $pickup_id = $rate_id . '_selfpickup';
-                $self_pickup->id = $pickup_id;
-                $self_pickup->label = 'รับเองหน้าร้าน';
-                $self_pickup->cost = 0;
-                $new_rates[$pickup_id] = $self_pickup;
-            }
-
-            if(get_option('no_discount_self_pickup', "yes") == "yes") {
-                add_action('woocommerce_before_calculate_totals', 'disable_discounts_for_self_pickup', 20);
-
-                function disable_discounts_for_self_pickup($cart) {
-                    if (is_admin() && !defined('DOING_AJAX')) return;
-
-                    $chosen_methods = WC()->session->get('chosen_shipping_methods');
-                    $chosen_shipping = isset($chosen_methods[0]) ? $chosen_methods[0] : '';
-
-                    if (strpos($chosen_shipping, '_selfpickup') !== false) {
-                        if (!empty($cart->get_applied_coupons())) {
-                            $cart->remove_coupons();
-                            wc_clear_notices();
-                            wc_add_notice('การรับสินค้าเองหน้าร้านไม่สามารถใช้ร่วมกับคูปองส่วนลดได้', 'notice');
-                        }
-                    }
-                }
-            }
-        } else {
-            // ถ้ามีขนส่งอื่นที่ไม่ใช่ Weight Based ให้โชว์ปกติ
+        if (strpos($rate_id, 'wbs') === false) {
             $new_rates[$rate_id] = $rate;
+        }
+    }
+
+    // Build our own shipping rates so this plugin does NOT depend on Weight Based Shipping
+    $default_pricing = get_option('default_shipping_pricing', array());
+    $default_shipping_total = 0;
+
+    if (!empty($default_pricing) && WC()->cart) {
+        $weight_unit = get_option('woocommerce_weight_unit', 'kg');
+
+        foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
+            $product_id = $cart_item['product_id'];
+            $quantity = $cart_item['quantity'];
+
+            $product = wc_get_product($product_id);
+            $product_weight = $product ? (float) $product->get_weight() : 0;
+
+            // Convert product weight to grams based on store settings
+            if ($weight_unit === 'kg') {
+                $product_weight_grams = $product_weight * 1000;
+            } elseif ($weight_unit === 'g' || $weight_unit === 'gram') {
+                $product_weight_grams = $product_weight;
+            } elseif ($weight_unit === 'lbs' || $weight_unit === 'lb') {
+                $product_weight_grams = $product_weight * 453.59237;
+            } else {
+                $product_weight_grams = $product_weight * 1000;
+            }
+
+            // Find matching pricing profile for this product weight
+            foreach ($default_pricing as $profile) {
+                $start = (float) $profile['start'];
+                $end = (float) $profile['end'];
+
+                if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
+                    $default_shipping_total += ((float) $profile['cost']) * $quantity;
+                    break; // assume non-overlapping ranges
+                }
+            }
+        }
+    }
+
+    // Main auto-selected shipping rate (our replacement for WBS)
+    $auto_id = 'custom_shipping_auto';
+    $auto_cost = $default_shipping_total + $packing_fee + $remote_surcharge;
+    $auto_rate = new WC_Shipping_Rate( $auto_id, 'ค่าจัดส่ง (เลือกอัตโนมัติ)', $auto_cost );
+    $new_rates[$auto_id] = $auto_rate;
+
+    // Kerry Express option
+    if(get_option("enable_kerry_express") == "yes") {
+        $kerry_id = 'custom_shipping_kerry';
+        $kerry_cost = $default_shipping_total + $packing_fee + $remote_surcharge + (float) get_option('kerry_express_fee', 30);
+        $kerry_rate = new WC_Shipping_Rate( $kerry_id, 'Kerry Express', $kerry_cost );
+        $new_rates[$kerry_id] = $kerry_rate;
+    }
+
+    // Thailand Post EMS (limit 20kg)
+    if ($total_weight <= 20000) {
+        $w = $total_weight; // grams
+        $ems_cost = 0;
+
+        if ($w <= 20) {
+            $ems_cost = (float) get_option('ems_fee_p1', 32);
+        } elseif ($w <= 100) {
+            $ems_cost = (float) get_option('ems_fee_p2', 37);
+        } elseif ($w <= 250) {
+            $ems_cost = (float) get_option('ems_fee_p3', 42);
+        } elseif ($w <= 500) {
+            $ems_cost = (float) get_option('ems_fee_p4', 52);
+        } elseif ($w <= 1000) {
+            $ems_cost = (float) get_option('ems_fee_p5', 67);
+        } elseif ($w <= 1500) {
+            $ems_cost = (float) get_option('ems_fee_p6', 82);
+        } elseif ($w <= 2000) {
+            $ems_cost = (float) get_option('ems_fee_p7', 97);
+        } elseif ($w <= 2500) {
+            $ems_cost = (float) get_option('ems_fee_p8', 100);
+        } elseif ($w <= 3000) {
+            $ems_cost = (float) get_option('ems_fee_p9', 105);
+        } elseif ($w <= 3500) {
+            $ems_cost = (float) get_option('ems_fee_p10', 110);
+        } elseif ($w <= 4000) {
+            $ems_cost = (float) get_option('ems_fee_p11', 120);
+        } elseif ($w <= 4500) {
+            $ems_cost = (float) get_option('ems_fee_p12', 120);
+        } elseif ($w <= 5000) {
+            $ems_cost = (float) get_option('ems_fee_p13', 120);
+        } elseif ($w <= 5500) {
+            $ems_cost = (float) get_option('ems_fee_p14', 130);
+        } elseif ($w <= 6000) {
+            $ems_cost = (float) get_option('ems_fee_p15', 140);
+        } else {
+            $extra_kg = ceil(($w - 6000) / 1000);
+            $ems_cost = (float) get_option('ems_fee_p15', 140) + ($extra_kg * get_option('ems_fee_after_6kg', 35));
+        }
+
+        $ems_total = $ems_cost + $packing_fee + $remote_surcharge;
+        $ems_rate = new WC_Shipping_Rate( $rate_id . '_ems_custom', 'ไปรษณีย์ไทย (EMS)', $ems_total );
+        $new_rates[$ems_rate->get_id()] = $ems_rate;
+    }
+
+    // Self pickup
+    if(get_option('enable_self_pickup', 'no') == 'yes') {
+        $pickup_id = 'custom_shipping_selfpickup';
+        $self_pickup_rate = new WC_Shipping_Rate( $pickup_id, 'รับเองหน้าร้าน', 0 );
+        $new_rates[$pickup_id] = $self_pickup_rate;
+    }
+
+    // If self-pickup should disallow coupons, ensure we register the hook once
+    if ( get_option('no_discount_self_pickup', 'yes') == 'yes' ) {
+        if (!function_exists('disable_discounts_for_self_pickup')) {
+            add_action('woocommerce_before_calculate_totals', 'disable_discounts_for_self_pickup', 20);
+
+            function disable_discounts_for_self_pickup($cart) {
+                if (is_admin() && !defined('DOING_AJAX')) return;
+
+                $chosen_methods = WC()->session->get('chosen_shipping_methods');
+                $chosen_shipping = isset($chosen_methods[0]) ? $chosen_methods[0] : '';
+
+                if (strpos($chosen_shipping, 'selfpickup') !== false) {
+                    if (!empty($cart->get_applied_coupons())) {
+                        $cart->remove_coupons();
+                        wc_clear_notices();
+                        wc_add_notice('การรับสินค้าเองหน้าร้านไม่สามารถใช้ร่วมกับคูปองส่วนลดได้', 'notice');
+                    }
+                }
+            }
         }
     }
 
@@ -641,8 +762,8 @@ function combined_shipping_methods($rates, $package)
 /**
  * บันทึกชื่อบริษัทขนส่งลงใน Order Note หลังจากลูกค้าสั่งซื้อ
  */
-add_action('woocommerce_checkout_update_order_meta', 'worldchem_save_shipping_label_to_order_note', 10, 2);
-function worldchem_save_shipping_label_to_order_note($order_id, $data)
+add_action('woocommerce_checkout_update_order_meta', 'save_shipping_label_to_order_note', 10, 2);
+function save_shipping_label_to_order_note($order_id, $data)
 {
     // 1. ดึงข้อมูลการจัดส่งจากออเดอร์
     $order = wc_get_order($order_id);
