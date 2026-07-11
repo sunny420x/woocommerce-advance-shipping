@@ -1,11 +1,10 @@
 <?php
 /**
- * Plugin Name: Advance Shipping Company For Woocommerce
- * Description: ระบบเลือกบริษัทขนส่งเองสำหรับลูกค้า ใช้ร่วมกับ Weight Based Shipping for WooCommerce
- * Version: 1.0
+ * Plugin Name: Advance Shipping For Woocommerce
+ * Description: ระบบกำหนดค่าบริการขนส่ง และเลือกบริษัทขนส่งเองสำหรับลูกค้า สำหรับสินค้าบน WooCommerce
  * Author: Jirakit Pawnsakunrungrot
  * Author URI: https://www.linkedin.com/in/sunny-jirakit
- * Plugin URI: https://github.com/sunny420x/woocommerce-custom-shipping-company
+ * Plugin URI: https://github.com/sunny420x/woocommerce-advance-shipping
  */
 
 add_action('admin_menu', 'custom_shipping_company_menu');
