@@ -637,13 +637,6 @@ function combined_shipping_methods($rates, $package)
         return $rates;
     }
 
-    $new_rates = array();
-    foreach ($rates as $rate_id => $rate) {
-        if (is_object($rate)) {
-            $new_rates[$rate_id] = $rate;
-        }
-    }
-
     $total_weight = (float) WC()->cart->get_cart_contents_weight();
     $weight_unit = get_option('woocommerce_weight_unit', 'kg');
 
@@ -682,7 +675,7 @@ function combined_shipping_methods($rates, $package)
         foreach (WC()->cart->get_cart() as $cart_item) {
             $product_id = isset($cart_item['product_id']) ? $cart_item['product_id'] : 0;
             $quantity = isset($cart_item['quantity']) ? (int) $cart_item['quantity'] : 1;
-            $product = wc_get_product($product_id);
+            $product = $cart_item['data']; 
             $product_weight = $product ? (float) $product->get_weight() : 0;
 
             if ($weight_unit === 'kg') {
