@@ -322,10 +322,11 @@ function woocommerce_custom_shipping_setting_page()
                         <h4>6 กิโลกรัมขึ้นไป คิดเพิ่มกิโลกรัมละ</h4>
                         <input type="number" name="ems_fee_after_6kg"
                             value="<?php echo esc_attr(get_option('ems_fee_after_6kg', 35)); ?>" /> บาท
+                        <br>
+                        <br>
+                        <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
                     </div>
                 </form>
-                <br>
-                <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
             </div>
             <?php
             } else if(isset($_GET['option']) && $_GET['option'] == "settings") {
