@@ -97,6 +97,7 @@ function woocommerce_custom_shipping_setting_page()
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=ems" <?php if(isset($_GET['option']) && $_GET['option'] == "ems") { echo "class='active'"; } ?>>🚚 EMS</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost" <?php if(isset($_GET['option']) && $_GET['option'] == "category_based_shipping_cost") { echo "class='active'"; } ?>>🚚 คิดค่าขนส่งคงที่ตามประเภทสินค้า</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=packing_settings" <?php if(isset($_GET['option']) && $_GET['option'] == "packing_settings") { echo "class='active'"; } ?>>📦 การแพ็คสินค้า</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=free_shipping" <?php if(isset($_GET['option']) && $_GET['option'] == "free_shipping") { echo "class='active'"; } ?>>🆓 สินค้าส่งฟรี</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=settings" <?php if(isset($_GET['option']) && $_GET['option'] == "settings") { echo "class='active'"; } ?>>🔧 ตั้งค่าทั่วไป</a>
         </div>
         <div class="container">
@@ -563,6 +564,98 @@ function woocommerce_custom_shipping_setting_page()
                 </table>
             </div>
             <?php
+            } else if(isset($_GET['option']) && $_GET['option'] == "free_shipping") {
+                $remote_areas_cost = get_option('free_shipping_remote_areas_cost', 100);
+             ?>
+            <h1>สินค้าโปรโมชั่นส่งฟรี</h1>
+            <div style="padding: 25px 25px 25px 25px;">
+                <form action="options.php" method="post">
+                    <?php
+                        settings_fields('free_shipping_settings_group');
+                    ?>
+                    <label for="free_shipping_products_list">Slugs สินค้าส่งฟรี: </label>
+                    <input type="text" name="free_shipping_products_list" id="free_shipping_products_list" style="width: 100%;" value="<?=get_option('free_shipping_products_list')?>">
+                    <div style="height: 400px; overflow: auto;">
+                        <?php
+                        $args = array(
+                            'status'  => 'publish',
+                            'limit'   => -1, // -1 pulls all items
+                            'orderby' => 'name',
+                            'order'   => 'ASC',
+                        );
+
+                        $all_products = wc_get_products($args);
+
+                        $free_shipping_products_list = explode(",", get_option('free_shipping_products_list', ''));
+
+                        foreach ($all_products as $product) {
+                            ?>
+                            
+                            <?php
+                            if ($product->get_type() == 'variable') {
+                                $variations = $product->get_available_variations();
+                                
+                                foreach ($variations as $variation) {
+                                    $variation_id = $variation['variation_id'];
+                                    $is_checked = false;
+
+                                    if (!empty($free_shipping_products_list) && in_array($variation_id, $free_shipping_products_list)) {
+                                        $is_checked = true;
+                                    }
+        
+                                    $attribute_labels = [];
+                                    foreach ($variation['attributes'] as $key => $value) {
+                                        $attr_name = str_replace('attribute_', '', $key);
+                                        $attr_name = wc_attribute_label($attr_name); 
+                                        $attribute_labels[] = $attr_name . ': ' . ucfirst($value);
+                                    }
+                                    $attributes_text = implode(', ', $attribute_labels);
+                                    ?>
+                                    <p>
+                                        <input 
+                                            type="checkbox" 
+                                            name="free_shipping_products[<?php echo esc_attr($variation_id); ?>]" 
+                                            value="<?php echo esc_attr($variation_id); ?>" 
+                                            <?php checked($is_checked, true); ?> 
+                                            onchange="initProduct();"
+                                        />
+                                        <?php echo esc_html($product->get_title()) . ' (' . esc_html(urldecode($attributes_text)) . ')'; ?>
+                                    </p>
+                                    <?php
+                                }
+                            } else {
+                                $is_checked = false;
+                                if (!empty($free_shipping_products_list) && in_array($product->get_id(), $free_shipping_products_list)) {
+                                    $is_checked = true;
+                                }
+                            ?>
+                                <p><input type="checkbox" name="free_shipping_products[<?=$product->get_id()?>]" value="<?=$product->get_id()?>" <?php if($is_checked) { echo "checked"; } ?> onchange="initProduct();" /><?php echo esc_html($product->get_title()); ?></p>
+                            <?php
+                            }
+                            ?>
+                        <?php
+                        }
+                        ?>
+                    </div>
+                    <br>
+                    <label for="free_shipping_remote_areas_cost">ค่าธรรมเนียมเพิ่มเติมสำหรับพื้นที่ห่างไกล: </label>
+                    <input type="number" name="free_shipping_remote_areas_cost" id="free_shipping_remote_areas_cost" value="<?=get_option('free_shipping_remote_areas_cost', 100)?>"> บาท
+                    <br>
+                    <br>
+                    <input type="submit" value="บันทึกการเปลี่ยนแปลง" class="button button-primary" style="width: 100%;">
+                </form>
+                <script>
+                    function initProduct() {
+                        const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                        let items = []
+                        checkedBoxes.forEach(item => {
+                            items.push(item.value)
+                        })
+                        document.getElementsByName('free_shipping_products_list')[0].value = items.join(",");
+                    }
+                </script>
+            </div>
+            <?php
             } else {
             ?>
             <h1>WooCommerce Custom Shipping Setting</h1>
@@ -624,6 +717,9 @@ function woocommerce_custom_shipping_setting_init()
     register_setting('shipping_settings_group', 'enable_category_based_shipping_cost');
     register_setting('category_shipping_settings_group', 'category_based_shipping_list');
 
+    register_setting('free_shipping_settings_group', 'free_shipping_products_list');
+    register_setting('free_shipping_settings_group', 'free_shipping_remote_areas_cost');
+
     register_setting( 'default_shipping_settings_group', 'default_shipping_pricing' );
 }
 
@@ -667,38 +763,87 @@ function combined_shipping_methods($rates, $package)
     $remote_areas_raw = get_option('remote_areas_list', '');
     $remote_areas = array_filter(array_map('trim', preg_split('/\r\n|\n|,/', $remote_areas_raw) ?: array()));
     $is_remote = !empty($destination_zip) && in_array($destination_zip, $remote_areas, true);
-    $remote_surcharge = $is_remote ? (float) get_option('remote_surcharge', 60) : 0;
+
+    $free_shipping_products_raw = get_option('free_shipping_products_list', '');
+    $free_shipping_products = array_filter(array_map('intval', array_map('trim', explode(',', $free_shipping_products_raw))));
 
     $default_pricing = get_option('default_shipping_pricing', array());
     $default_shipping_total = 0;
+    $has_non_free_product = false;
+    $has_free_shipping_product = false;
 
-    if (!empty($default_pricing) && WC()->cart) {
+    if (WC()->cart) {
         foreach (WC()->cart->get_cart() as $cart_item) {
             $product_id = isset($cart_item['product_id']) ? $cart_item['product_id'] : 0;
-            $quantity = isset($cart_item['quantity']) ? (int) $cart_item['quantity'] : 1;
-            $product = $cart_item['data']; 
-            $product_weight = $product ? (float) $product->get_weight() : 0;
+            $variation_id = isset($cart_item['variation_id']) ? $cart_item['variation_id'] : 0;
+            $item_id = $variation_id > 0 ? $variation_id : $product_id;
 
-            if ($weight_unit === 'kg') {
-                $product_weight_grams = $product_weight * 1000;
-            } elseif ($weight_unit === 'g' || $weight_unit === 'gram') {
-                $product_weight_grams = $product_weight;
-            } elseif ($weight_unit === 'lbs' || $weight_unit === 'lb') {
-                $product_weight_grams = $product_weight * 453.59237;
-            } else {
-                $product_weight_grams = $product_weight * 1000;
+            if (in_array($item_id, $free_shipping_products, true)) {
+                $has_free_shipping_product = true;
+                continue;
             }
 
-            foreach ($default_pricing as $profile) {
-                $start = (float) $profile['start'];
-                $end = (float) $profile['end'];
+            $has_non_free_product = true;
 
-                if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
-                    $default_shipping_total += ((float) $profile['cost']) * $quantity;
-                    break;
+            if (!empty($default_pricing)) {
+                $quantity = isset($cart_item['quantity']) ? (int) $cart_item['quantity'] : 1;
+                $product = $cart_item['data']; 
+                $product_weight = $product ? (float) $product->get_weight() : 0;
+
+                if ($weight_unit === 'kg') {
+                    $product_weight_grams = $product_weight * 1000;
+                } elseif ($weight_unit === 'g' || $weight_unit === 'gram') {
+                    $product_weight_grams = $product_weight;
+                } elseif ($weight_unit === 'lbs' || $weight_unit === 'lb') {
+                    $product_weight_grams = $product_weight * 453.59237;
+                } else {
+                    $product_weight_grams = $product_weight * 1000;
+                }
+
+                foreach ($default_pricing as $profile) {
+                    $start = (float) $profile['start'];
+                    $end = (float) $profile['end'];
+
+                    if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
+                        $default_shipping_total += ((float) $profile['cost']) * $quantity;
+                        break;
+                    }
                 }
             }
         }
+    }
+
+    if ($has_non_free_product) {
+        $remote_surcharge = $is_remote ? (float) get_option('remote_surcharge', 60) : 0;
+    } elseif ($has_free_shipping_product) {
+        $remote_surcharge = $is_remote ? (float) get_option('free_shipping_remote_areas_cost', 100) : 0;
+    } else {
+        $remote_surcharge = 0;
+    }
+
+    if ($weight_unit === 'kg') {
+        $product_weight_grams = $product_weight * 1000;
+    } elseif ($weight_unit === 'g' || $weight_unit === 'gram') {
+        $product_weight_grams = $product_weight;
+    } elseif ($weight_unit === 'lbs' || $weight_unit === 'lb') {
+        $product_weight_grams = $product_weight * 453.59237;
+    } else {
+        $product_weight_grams = $product_weight * 1000;
+    }
+
+    foreach ($default_pricing as $profile) {
+        $start = (float) $profile['start'];
+        $end = (float) $profile['end'];
+
+        if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
+            $default_shipping_total += ((float) $profile['cost']) * $quantity;
+            break;
+        }
+    }
+
+    if (!$has_non_free_product) {
+        $packing_fee = 0;
+        $remote_surcharge = 0;
     }
 
     $auto_id = 'custom_shipping_auto';
@@ -786,6 +931,187 @@ function combined_shipping_methods($rates, $package)
 
     return $new_rates;
 }
+
+function custom_free_shipping_product_ids()
+{
+    $raw = get_option('free_shipping_products_list', '');
+    return array_filter(array_map('intval', array_map('trim', explode(',', $raw))));
+}
+
+function custom_free_shipping_variation_option_name($term, $variation)
+{
+    $free_shipping_ids = custom_free_shipping_product_ids();
+
+    $variation_id = 0;
+    if (is_object($variation)) {
+        if (method_exists($variation, 'get_id')) {
+            $variation_id = $variation->get_id();
+        } elseif (isset($variation->variation_id)) {
+            $variation_id = $variation->variation_id;
+        }
+    }
+
+    if ($variation_id && in_array($variation_id, $free_shipping_ids, true)) {
+        $term .= ' <span class="custom-free-shipping-label">ส่งฟรี</span>';
+    }
+
+    return $term;
+}
+add_filter('woocommerce_variation_option_name', 'custom_free_shipping_variation_option_name', 10, 2);
+
+function custom_free_shipping_product_page_badge_markup()
+{
+    if (!is_product()) {
+        return;
+    }
+    global $product;
+    if (!is_object($product)) {
+        return;
+    }
+    $free_shipping_ids = custom_free_shipping_product_ids();
+    if (empty($free_shipping_ids)) {
+        return;
+    }
+    $product_id = $product->get_id();
+    $has_free_simple = in_array($product_id, $free_shipping_ids, true);
+    $has_free_variation = false;
+    if ($product->is_type('variable')) {
+        foreach ($product->get_children() as $variation_id) {
+            if (in_array($variation_id, $free_shipping_ids, true)) {
+                $has_free_variation = true;
+                break;
+            }
+        }
+    }
+    if (!$has_free_simple && !$has_free_variation) {
+        return;
+    }
+
+    ?>
+    <div id="custom-free-shipping-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 512 512" width="30" height="30" fill="#2a7d2a"><ellipse cx="187.06" cy="360.52" rx="40.45" ry="35.15" transform="translate(-195.6 224.35) rotate(-42.99)"/><ellipse cx="403.28" cy="360.52" rx="40.45" ry="35.15" transform="translate(-137.54 371.8) rotate(-42.99)"/><rect x="5.41" y="182.71" width="34.15" height="34.15" rx="17.08"/><path d="M346.48,356.94c6.07-30,34.41-53.84,64.87-53.84,29.33,0,50.47,22.11,49.89,50.54,31.72.83,40.55-40.94,40.55-40.94,2.67-11.68,6.66-34.45,10-56.8a37.76,37.76,0,0,0-2.43-20.42A350.18,350.18,0,0,0,479.42,180c-11-16.41-29.45-26.13-50.51-26.48-12.56-.2-24.89-.32-34.2-.32l-.08-.08c-1.2-20.08-15.84-35.46-36.39-37.3-13.37-1.19-66.33-2.06-91.75-2.06-10.1,0-24.59.14-39.25.38v-.06h-.12l0,0,0,0H50.86a17.07,17.07,0,0,0-17.08,17.08v.08a17,17,0,0,0,17,17l35.53,0h0a17,17,0,0,1,15.75,16.94v.09A17.08,17.08,0,0,1,85,182.4H66.78a17.07,17.07,0,0,0-17.07,17.07h0a17.07,17.07,0,0,0,17.07,17.08H85a17.08,17.08,0,0,1,17.08,17.08h0A17.08,17.08,0,0,1,85,250.71H16.84A17.08,17.08,0,0,0-.24,267.78h0a17.08,17.08,0,0,0,17.08,17.08H85a17.08,17.08,0,0,1,17.08,17.08h0A17.08,17.08,0,0,1,85,319H63.92a17.07,17.07,0,0,0-17.07,17.07h0a17.08,17.08,0,0,0,17.07,17.08l67.26-.05,5.59-13.93h0c11.45-21.12,34.23-36.08,58.35-36.08,30.47,0,52.11,23.86,49.73,53.88H346.47M177.07,190.35H154.15a.1.1,0,0,0-.09.08l-2.11,15a.08.08,0,0,0,.08.1h17.06a5.63,5.63,0,0,1,5.7,6.63,7.89,7.89,0,0,1-7.56,6.63H150.15a.09.09,0,0,0-.09.07L147,240.65a7.89,7.89,0,0,1-7.56,6.63,5.62,5.62,0,0,1-5.69-6.63l7.94-56.52a8.36,8.36,0,0,1,8-7h29.23a5.62,5.62,0,0,1,5.69,6.63A7.87,7.87,0,0,1,177.07,190.35Zm61.26-8.72a15.55,15.55,0,0,1,4.8,8,27.57,27.57,0,0,1,.4,10.7A29.23,29.23,0,0,1,237,215.38a21,21,0,0,1-8.07,5.87.08.08,0,0,0,0,.11l5.68,16.39c1.53,4.4-2.4,9.53-7.29,9.53H227a5.59,5.59,0,0,1-5.44-3.74l-6.87-20a.11.11,0,0,0-.09-.05H200a.1.1,0,0,0-.09.07l-2.4,17.08a7.89,7.89,0,0,1-7.56,6.63,5.62,5.62,0,0,1-5.69-6.63l7.94-56.52a8.36,8.36,0,0,1,8-7h22.6S232.72,176.81,238.33,181.63Zm62.2,1.66a7.36,7.36,0,0,1-7.06,6.19H267.18a.1.1,0,0,0-.09.07L265,204.39a.08.08,0,0,0,.08.1h20.42a5.25,5.25,0,0,1,5.32,6.19,7.36,7.36,0,0,1-7.06,6.19H263.33a.1.1,0,0,0-.09.07l-2.51,17.86a.1.1,0,0,0,.09.1h26.27a5.25,5.25,0,0,1,5.32,6.19h0a7.36,7.36,0,0,1-7.06,6.19h-32.6a6,6,0,0,1-6-7l7.89-56.12a8.36,8.36,0,0,1,8-7h32.59A5.25,5.25,0,0,1,300.53,183.29Zm54.61,0a7.36,7.36,0,0,1-7.06,6.19H321.79a.1.1,0,0,0-.09.07l-2.08,14.84a.08.08,0,0,0,.08.1h20.42a5.25,5.25,0,0,1,5.32,6.19,7.36,7.36,0,0,1-7.06,6.19H317.94a.1.1,0,0,0-.09.07l-2.51,17.86a.1.1,0,0,0,.09.1H341.7a5.25,5.25,0,0,1,5.32,6.19h0a7.36,7.36,0,0,1-7.06,6.19h-32.6a6,6,0,0,1-6-7l7.89-56.12a8.36,8.36,0,0,1,8-7h32.59A5.25,5.25,0,0,1,355.14,183.29Zm38-6.41c8.93,0,20.49.12,32.09.31,14.06.23,26.36,6.69,33.74,17.71A322.39,322.39,0,0,1,480.18,232c3.3,6.72-2.77,15.47-10.72,15.47H384.21Z"/><path d="M217.45,211.12h-15.8l3-21.64h15.79s11.59-.75,9.69,10.82C230.18,200.3,228.85,211.12,217.45,211.12Z"/></svg> 
+        <span style="
+        color: #2a7d2a; 
+        display: inline-flex;
+        color: #2a7d2a;
+        height: 32px;
+        padding: 0 0 0 10px;
+        vertical-align: bottom;
+        font-weight: 500;
+        font-size: 18px;
+        ">
+            สินค้าโปรโมชั่น ส่งฟรีทั่วประเทศ
+        </span> 
+    </div>
+    <?php
+}
+?>
+
+<?php
+add_action('woocommerce_single_product_summary', 'custom_free_shipping_product_page_badge_markup', 6);
+
+function custom_free_shipping_product_page_script()
+{
+    if (!is_product()) {
+        return;
+    }
+
+    global $product;
+    if (!is_object($product)) {
+        return;
+    }
+
+    $free_shipping_ids = custom_free_shipping_product_ids();
+    $free_ids_json = json_encode(array_values($free_shipping_ids));
+    $product_id = $product->get_id();
+    $has_free_simple = in_array($product_id, $free_shipping_ids, true);
+    $has_free_variation = false;
+
+    if ($product->is_type('variable')) {
+        foreach ($product->get_children() as $variation_id) {
+            if (in_array($variation_id, $free_shipping_ids, true)) {
+                $has_free_variation = true;
+                break;
+            }
+        }
+    }
+
+    if (!$has_free_simple && !$has_free_variation) {
+        return;
+    }
+
+    echo '<script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            var freeIds = ' . $free_ids_json . ';
+            var productId = ' . (int)$product_id . ';
+            var badge = document.getElementById("custom-free-shipping-badge");
+            if (!badge) {
+                return;
+            }
+
+            function showBadge() {
+                badge.style.display = "inline-block";
+            }
+
+            function hideBadge() {
+                badge.style.display = "none";
+            }
+
+            function updateBadgeForVariation(variation) {
+                if (!variation || !variation.variation_id) {
+                    hideBadge();
+                    return;
+                }
+                if (freeIds.indexOf(Number(variation.variation_id)) !== -1) {
+                    showBadge();
+                } else {
+                    hideBadge();
+                }
+            }
+
+            function updateBadgeForCurrentSelection() {
+                var form = document.querySelector("form.variations_form");
+                if (!form) {
+                    hideBadge();
+                    return;
+                }
+                var variationIdInput = form.querySelector("input[name=\"variation_id\"]");
+                if (variationIdInput && variationIdInput.value) {
+                    updateBadgeForVariation({ variation_id: parseInt(variationIdInput.value, 10) });
+                } else {
+                    hideBadge();
+                }
+            }
+
+            if (freeIds.indexOf(productId) !== -1) {
+                showBadge();
+                return;
+            }
+
+            var form = document.querySelector("form.variations_form");
+            if (!form) {
+                hideBadge();
+                return;
+            }
+
+            if (typeof jQuery !== "undefined") {
+                jQuery(form).on("found_variation", function(event, variation) {
+                    updateBadgeForVariation(variation);
+                });
+                jQuery(form).on("reset_data", function() {
+                    hideBadge();
+                });
+            }
+
+            form.addEventListener("change", function() {
+                setTimeout(updateBadgeForCurrentSelection, 10);
+            });
+
+            updateBadgeForCurrentSelection();
+        });
+    </script>';
+}
+add_action('wp_footer', 'custom_free_shipping_product_page_script');
 
 /**
  * บันทึกชื่อบริษัทขนส่งลงใน Order Note หลังจากลูกค้าสั่งซื้อ
