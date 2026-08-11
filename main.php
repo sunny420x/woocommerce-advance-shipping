@@ -349,6 +349,13 @@ function woocommerce_custom_shipping_setting_page()
                             <p>หากลูกค้าเลือกขนส่ง Kerry Express จะบวกเพิ่มเป็นจำนวนกี่บาท</p>
                             <input type="number" name="kerry_express_fee"
                                 value="<?php echo esc_attr(get_option('kerry_express_fee', 30)); ?>" />
+                            <h2>ไปรษณีย์ไทย (EMS)</h2>
+                            <p>เปิดใช้งานขนส่งไปรษณีย์ไทย (EMS)</p>
+                            <select name="enable_ems" id="">
+                                <option value="yes" <?php selected(get_option('enable_ems'), 'yes') ?>>ใช่</option>
+                                <option value="no" <?php selected(get_option('enable_ems'), 'no') ?>>ไม่ใช่</option>
+                            </select>
+                            <p>หากเปิดใช้งาน จะมีตัวเลือก EMS ปรากฏในหน้าชำระเงินตามน้ำหนักสินค้า</p>
                             <h2>พื้นที่ห่างไกล (Remote Areas)</h2>
                             <p>กรอกรหัสไปรษณีย์ที่ต้องการบวกค่าบริการเพิ่ม (แยกด้วยเครื่องหมายคอมม่า หรือขึ้นบรรทัดใหม่)</p>
                             <textarea name="remote_areas_list" rows="10" cols="50" class="large-text" style="font-family: monospace;"><?php 
@@ -709,6 +716,7 @@ function woocommerce_custom_shipping_setting_init()
     register_setting('packing_shipping_settings_group', 'packing_fee_30_plus');
     
     register_setting('shipping_settings_group', 'kerry_express_fee');
+    register_setting('shipping_settings_group', 'enable_ems');
     register_setting('shipping_settings_group', 'remote_surcharge');
     register_setting('shipping_settings_group', 'remote_areas_list');
     register_setting('shipping_settings_group', 'no_discount_self_pickup');
@@ -858,7 +866,7 @@ function combined_shipping_methods($rates, $package)
         $new_rates[$kerry_id] = $kerry_rate;
     }
 
-    if ($total_weight_grams <= 20000) {
+    if (get_option('enable_ems') == 'yes' && $total_weight_grams <= 20000) {
         $w = $total_weight_grams;
         $ems_cost = 0;
 
