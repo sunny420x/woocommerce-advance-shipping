@@ -829,25 +829,7 @@ function combined_shipping_methods($rates, $package)
         $remote_surcharge = 0;
     }
 
-    if ($weight_unit === 'kg') {
-        $product_weight_grams = $product_weight * 1000;
-    } elseif ($weight_unit === 'g' || $weight_unit === 'gram') {
-        $product_weight_grams = $product_weight;
-    } elseif ($weight_unit === 'lbs' || $weight_unit === 'lb') {
-        $product_weight_grams = $product_weight * 453.59237;
-    } else {
-        $product_weight_grams = $product_weight * 1000;
-    }
-
-    foreach ($default_pricing as $profile) {
-        $start = (float) $profile['start'];
-        $end = (float) $profile['end'];
-
-        if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
-            $default_shipping_total += ((float) $profile['cost']) * $quantity;
-            break;
-        }
-    }
+    // Removed duplicated per-product pricing block (it was applied earlier per cart item).
 
     if (!$has_non_free_product) {
         $packing_fee = 0;
