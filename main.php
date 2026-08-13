@@ -829,8 +829,6 @@ function combined_shipping_methods($rates, $package)
         $remote_surcharge = 0;
     }
 
-    // Removed duplicated per-product pricing block (it was applied earlier per cart item).
-
     if (!$has_non_free_product) {
         $packing_fee = 0;
         $remote_surcharge = 0;
