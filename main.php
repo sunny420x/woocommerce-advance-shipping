@@ -98,6 +98,7 @@ function woocommerce_custom_shipping_setting_page()
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=category_based_shipping_cost" <?php if(isset($_GET['option']) && $_GET['option'] == "category_based_shipping_cost") { echo "class='active'"; } ?>>🚚 คิดค่าขนส่งคงที่ตามประเภทสินค้า</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=packing_settings" <?php if(isset($_GET['option']) && $_GET['option'] == "packing_settings") { echo "class='active'"; } ?>>📦 การแพ็คสินค้า</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=free_shipping" <?php if(isset($_GET['option']) && $_GET['option'] == "free_shipping") { echo "class='active'"; } ?>>🆓 สินค้าส่งฟรี</a>
+            <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=weight_threshold_shipping" <?php if(isset($_GET['option']) && $_GET['option'] == "weight_threshold_shipping") { echo "class='active'"; } ?>>⚖️ คิดค่าขนส่งตามเกณฑ์น้ำหนัก</a>
             <a href="/wp-admin/admin.php?page=woocommerce-custom-shipping-settings&option=settings" <?php if(isset($_GET['option']) && $_GET['option'] == "settings") { echo "class='active'"; } ?>>🔧 ตั้งค่าทั่วไป</a>
         </div>
         <div class="container">
@@ -663,6 +664,31 @@ function woocommerce_custom_shipping_setting_page()
                 </script>
             </div>
             <?php
+            } else if(isset($_GET['option']) && $_GET['option'] == "weight_threshold_shipping") {
+            ?>
+            <h1>คิดค่าขนส่งตามเกณฑ์น้ำหนัก</h1>
+            <div style="padding: 25px 25px 25px 25px;">
+                <p>ตั้งค่าให้สินค้าที่มีน้ำหนักเกิน เกณฑ์ที่กำหนดให้คิดค่าส่งแต่ละชิ้น ส่วนสินค้าที่เหลือจะรวมน้ำหนักแล้วคิดค่าส่งรวม</p>
+                <form action="options.php" method="post">
+                    <?php
+                    settings_fields('weight_threshold_shipping_group');
+                    ?>
+                    <label for="weight_threshold_enabled">เปิดใช้งาน:</label>
+                    <select name="weight_threshold_enabled" id="weight_threshold_enabled">
+                        <option value="yes" <?php selected(get_option('weight_threshold_enabled'), 'yes') ?>>ใช่</option>
+                        <option value="no" <?php selected(get_option('weight_threshold_enabled'), 'no') ?>>ไม่ใช่</option>
+                    </select>
+                    <br><br>
+
+                    <label for="weight_threshold_value">กำหนดเกณฑ์น้ำหนัก (กรัม):</label><br>
+                    <input type="number" name="weight_threshold_value" id="weight_threshold_value" value="<?php echo esc_attr(get_option('weight_threshold_value', 5000)); ?>" style="width: 500px;" /> กรัม
+                    <p style="color: #666; font-size: 12px;">สินค้าที่มีน้ำหนักมากกว่าค่านี้ จะคิดค่าส่งแต่ละชิ้น ส่วนสินค้าอื่นจะรวมน้ำหนักแล้วคิดค่าส่งรวม</p>
+                    <br>
+
+                    <button class="button button-primary" style="width: 100%;" type="submit">บันทึกการเปลี่ยนแปลง</button>
+                </form>
+            </div>
+            <?php
             } else {
             ?>
             <h1>WooCommerce Custom Shipping Setting</h1>
@@ -714,6 +740,9 @@ function woocommerce_custom_shipping_setting_init()
     register_setting('packing_shipping_settings_group', 'packing_fee_5_20');
     register_setting('packing_shipping_settings_group', 'packing_fee_20_30');
     register_setting('packing_shipping_settings_group', 'packing_fee_30_plus');
+    
+    register_setting('weight_threshold_shipping_group', 'weight_threshold_enabled');
+    register_setting('weight_threshold_shipping_group', 'weight_threshold_value');
     
     register_setting('shipping_settings_group', 'kerry_express_fee');
     register_setting('shipping_settings_group', 'enable_ems');
@@ -780,6 +809,14 @@ function combined_shipping_methods($rates, $package)
     $has_non_free_product = false;
     $has_free_shipping_product = false;
 
+    // Weight threshold shipping feature
+    $weight_threshold_enabled = get_option('weight_threshold_enabled', 'no') === 'yes';
+    $weight_threshold_value = (float) get_option('weight_threshold_value', 5000);
+    $threshold_shipping_total = 0;
+    $normal_shipping_total = 0;
+    $normal_weight_total = 0;
+    $threshold_item_count = 0;
+
     if (WC()->cart) {
         foreach (WC()->cart->get_cart() as $cart_item) {
             $product_id = isset($cart_item['product_id']) ? $cart_item['product_id'] : 0;
@@ -808,16 +845,50 @@ function combined_shipping_methods($rates, $package)
                     $product_weight_grams = $product_weight * 1000;
                 }
 
-                foreach ($default_pricing as $profile) {
-                    $start = (float) $profile['start'];
-                    $end = (float) $profile['end'];
+                // Check if weight threshold shipping is enabled
+                if ($weight_threshold_enabled && $product_weight_grams > $weight_threshold_value) {
+                    // Calculate shipping for each item individually (over threshold)
+                    $threshold_item_count += $quantity;
+                    foreach ($default_pricing as $profile) {
+                        $start = (float) $profile['start'];
+                        $end = (float) $profile['end'];
 
-                    if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
-                        $default_shipping_total += ((float) $profile['cost']) * $quantity;
-                        break;
+                        if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
+                            $threshold_shipping_total += ((float) $profile['cost']) * $quantity;
+                            break;
+                        }
                     }
+                } else {
+                    // Add to normal weight pool (normal items)
+                    $normal_weight_total += $product_weight_grams * $quantity;
                 }
             }
+        }
+
+        // Calculate shipping for normal items (by total weight)
+        if ($normal_weight_total > 0) {
+            foreach ($default_pricing as $profile) {
+                $start = (float) $profile['start'];
+                $end = (float) $profile['end'];
+
+                if ($normal_weight_total >= $start && $normal_weight_total <= $end) {
+                    $normal_shipping_total = (float) $profile['cost'];
+                    break;
+                }
+            }
+        }
+
+        // Combine shipping totals
+        $default_shipping_total = $threshold_shipping_total + $normal_shipping_total;
+
+        // Store threshold shipping info in session for cart display
+        if ($weight_threshold_enabled && $threshold_item_count > 0) {
+            WC()->session->set('threshold_shipping_breakdown', array(
+                'threshold_shipping' => $threshold_shipping_total,
+                'normal_shipping' => $normal_shipping_total,
+                'total_shipping' => $default_shipping_total,
+                'threshold_item_count' => $threshold_item_count
+            ));
         }
     }
 
@@ -1119,4 +1190,42 @@ function save_shipping_label_to_order_note($order_id, $data)
         $note = "ประเภทการขนส่งที่ลูกค้าเลือก: " . $method_name;
         $order->add_order_note($note);
     }
+}
+
+/**
+ * Display weight threshold shipping breakdown on cart page
+ */
+add_action('woocommerce_cart_totals_after_shipping', 'display_threshold_shipping_breakdown', 10);
+function display_threshold_shipping_breakdown()
+{
+    if (!is_cart()) {
+        return;
+    }
+
+    $weight_threshold_enabled = get_option('weight_threshold_enabled', 'no') === 'yes';
+    if (!$weight_threshold_enabled) {
+        return;
+    }
+
+    $breakdown = WC()->session->get('threshold_shipping_breakdown', array());
+    if (empty($breakdown) || $breakdown['threshold_item_count'] <= 0) {
+        return;
+    }
+
+    ?>
+    <tr>
+        <td colspan="2">
+            <div>
+                <div style="padding: 10px 30px; color: #333;">
+                    <strong>รายละเอียดค่าขนส่ง (เกณฑ์น้ำหนัก)</strong><br>
+                    - สินค้าที่มีน้ำหนักเกิน: <strong><?php echo number_format($breakdown['threshold_item_count']); ?></strong> ชิ้น<br>
+                    - ค่าส่งสินค้าชิ้นใหญ่มากกว่า <?=number_format(get_option('weight_threshold_value') / 1000, 0)?> กิโลกรัม: <strong style="color: #c41e3a;"><?php echo wc_price($breakdown['threshold_shipping']); ?></strong><br>
+                    <?php if ($breakdown['normal_shipping'] > 0): ?>
+                    - ค่าส่งสินค้าอื่น: <strong><?php echo wc_price($breakdown['normal_shipping']); ?></strong><br>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </td>
+    </tr>
+    <?php
 }
