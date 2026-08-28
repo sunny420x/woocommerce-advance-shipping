@@ -5,6 +5,8 @@
  * Author: Jirakit Pawnsakunrungrot
  * Author URI: https://www.linkedin.com/in/sunny-jirakit
  * Plugin URI: https://github.com/sunny420x/woocommerce-advance-shipping
+ * GitHub Plugin URI: https://github.com/sunny420x/woocommerce-advance-shipping
+ * Primary Branch: master
  */
 
 add_action('admin_menu', 'custom_shipping_company_menu');
