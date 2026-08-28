@@ -7,6 +7,7 @@
  * Plugin URI: https://github.com/sunny420x/woocommerce-advance-shipping
  * GitHub Plugin URI: https://github.com/sunny420x/woocommerce-advance-shipping
  * Primary Branch: master
+ * Version: 1.0.0
  */
 
 add_action('admin_menu', 'custom_shipping_company_menu');
