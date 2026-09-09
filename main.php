@@ -89,6 +89,7 @@ function woocommerce_custom_shipping_setting_page()
         <div style="padding: 20px 0;">
             <h1>WooCommerce Advance Shipping System</h1>
             <p>ระบบคำนวณค่าขนส่ง ค่าแพ็คสินค้า ตามน้ำหนัก</p>
+            <p>
             <strong>Github Repository:</strong> <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company" target="_blank">https://github.com/sunny420x/woocommerce-custom-shipping-company</a><br>
             <!-- <strong>Documentation:</strong> <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company/wiki" target="_blank">https://github.com/sunny420x/woocommerce-custom-shipping-company/wiki</a><br> -->
             <strong>Support:</strong> <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company/issues" target="_blank">https://github.com/sunny420x/woocommerce-custom-shipping-company/issues</a><br>
