@@ -88,7 +88,7 @@ function woocommerce_custom_shipping_setting_page()
         <img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'plugin-logo.jpg' ); ?>" " alt="Plugin Logo" style="width: 125px; height: auto; float: left; margin: 40px 10px 40px 20px; border-radius: 20px;">
         <div style="padding: 20px 0;">
             <h1>WooCommerce Advance Shipping System</h1>
-            <p>ระบบคำนวณค่าขนส่ง ค่าแพ็คสินค้า ตามน้ำหนัก</p>
+            <p>ระบบคำนวณค่าขนส่ง ค่าแพ็คสินค้า ตามน้ำหนัก สามารถใช้งานได้แบบ Standalone ร่วมกับปลั้กอิน WooCommerce</p>
             <p>
             <strong>Github Repository:</strong> <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company" target="_blank">https://github.com/sunny420x/woocommerce-custom-shipping-company</a><br>
             <!-- <strong>Documentation:</strong> <a href="https://github.com/sunny420x/woocommerce-custom-shipping-company/wiki" target="_blank">https://github.com/sunny420x/woocommerce-custom-shipping-company/wiki</a><br> -->
@@ -702,7 +702,7 @@ function woocommerce_custom_shipping_setting_page()
             <div style="padding: 0 25px 25px 25px;">
                 <h2>ระบบนี้คืออะไร ?</h2>
                 <p>ระบบ WooCommerce Custom Shipping Setting
-                    คือระบบที่ออกแบบมาเพื่อจัดการค่าบริการบริษัทขนส่งสำหรับ Weight Based Shipping for WooCommerce รองรับการเลือกบริษัทขนส่งเองโดยลูกค้า 
+                    คือระบบที่ออกแบบมาเพื่อจัดการค่าบริการบริษัทขนส่ง สามารถใช้งานได้แบบ Standalone ร่วมกับปลั้กอิน WooCommerce รองรับการเลือกบริษัทขนส่งเองโดยลูกค้า 
                     รองรับการคิดค่าบริการขนส่งแบบขั้นบันใดของไปรษณีย์ไทย รองรับการกำหนดค่าขนส่งแบบคงที่จะสำหรับหมวดหมู่ของสินค้าบางหมวดหมู่
                 </p>
                 <h2>วิธีการติดตั้ง</h2>
