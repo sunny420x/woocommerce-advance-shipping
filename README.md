@@ -1,7 +1,9 @@
-<img width="1616" height="909" alt="image" src="https://github.com/user-attachments/assets/9def5d76-0444-49c0-9d09-11fb8021f3ab" />
+<img width="250" height="250" alt="shipping-logo" src="https://github.com/user-attachments/assets/82410d41-0e9d-4140-9483-7c7e9d412226" />
 
 ## จัดการค่าบริการขนส่ง ##
 ระบบกำหนดค่าบริการขนส่ง ตัวเลือกบริษัทขนส่งสำหรับลูกค้า และตัวเลือกการรับหน้าร้าน สำหรับสินค้าบน WooCommerce รองรับการคิดค่าบริการขนส่งแบบขั้นบันใดของไปรษณีย์ไทย รองรับการกำหนดค่าขนส่งแบบคงที่จะสำหรับหมวดหมู่ของสินค้าบางหมวดหมู่ รองรับการบวกค่าแพ็คสินค้า และค่าธรรมเนียมอื่น ๆ เช่น พื้นที่ห่างไกล
+
+<img width="1740" height="780" alt="image" src="https://github.com/user-attachments/assets/ce1df4c8-f300-4196-89d9-d94818f510b6" />
 
 ## วิธีติดตั้งปลั้กอิน ##
 ไปที่ <code>/wp-admin/plugin-install.php</code> และอัปโหลดไฟล์ zip ของปลั้กอิน จากนั้นสามารถ <b>Activate</b> แล้วเริ่มใช้งานปลั้กอินจากเมนูได้เลย !
