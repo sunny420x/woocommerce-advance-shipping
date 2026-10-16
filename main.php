@@ -23,6 +23,193 @@ function custom_shipping_company_menu()
         'dashicons-airplane', // ไอคอน
         '80' // ตำแหน่งเมนู
     );
+
+    add_submenu_page(
+        'woocommerce-custom-shipping-settings',
+        'แก้ไขน้ำหนักด่วน',
+        'แก้ไขน้ำหนักด่วน',
+        'manage_options',
+        'woocommerce-custom-shipping-weight-editor',
+        'woocommerce_custom_shipping_weight_editor_page'
+    );
+}
+
+function woocommerce_custom_shipping_weight_editor_page()
+{
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('คุณไม่มีสิทธิ์เข้าถึงหน้านี้', 'woocommerce-custom-shipping-company'));
+    }
+
+    $products_per_page = 50;
+    $current_page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+
+    if (
+        isset($_SERVER['REQUEST_METHOD']) &&
+        $_SERVER['REQUEST_METHOD'] === 'POST' &&
+        isset($_POST['custom_shipping_update_weights'])
+    ) {
+        check_admin_referer('custom_shipping_update_weights', 'custom_shipping_weight_nonce');
+
+        $selected_product_ids = isset($_POST['selected_products']) && is_array($_POST['selected_products'])
+            ? array_values(array_unique(array_map('absint', wp_unslash($_POST['selected_products']))))
+            : array();
+        $submitted_weights = isset($_POST['product_weights']) && is_array($_POST['product_weights'])
+            ? wp_unslash($_POST['product_weights'])
+            : array();
+        $updated_count = 0;
+        $skipped_count = 0;
+
+        foreach ($selected_product_ids as $product_id) {
+            $post_type = get_post_type($product_id);
+            if (
+                !$product_id ||
+                !in_array($post_type, array('product', 'product_variation'), true) ||
+                !current_user_can('edit_post', $product_id)
+            ) {
+                $skipped_count++;
+                continue;
+            }
+
+            $raw_weight = isset($submitted_weights[$product_id]) && is_scalar($submitted_weights[$product_id])
+                ? (string) $submitted_weights[$product_id]
+                : '';
+            if (!preg_match('/^(?:\d+(?:\.\d*)?|\.\d+)$/', $raw_weight)) {
+                $skipped_count++;
+                continue;
+            }
+
+            $product = wc_get_product($product_id);
+            if (!$product) {
+                $skipped_count++;
+                continue;
+            }
+
+            $product->set_weight(wc_format_decimal($raw_weight, false, true));
+            $product->save();
+            $updated_count++;
+        }
+
+        $redirect_args = array(
+            'page' => 'woocommerce-custom-shipping-weight-editor',
+            'updated' => $updated_count,
+            'skipped' => $skipped_count,
+            'paged' => $current_page,
+        );
+        if (empty($selected_product_ids)) {
+            $redirect_args['no_selection'] = 1;
+        }
+
+        wp_safe_redirect(add_query_arg($redirect_args, admin_url('admin.php')));
+        exit;
+    }
+
+    $products_query = new WP_Query(array(
+        'post_type' => array('product', 'product_variation'),
+        'post_status' => array('publish', 'private', 'draft', 'pending', 'future', 'inherit'),
+        'posts_per_page' => $products_per_page,
+        'paged' => $current_page,
+        'orderby' => 'title',
+        'order' => 'ASC',
+        'no_found_rows' => false,
+    ));
+    $weight_unit = get_option('woocommerce_weight_unit', '');
+    ?>
+    <div class="wrap">
+        <h1>แก้ไขน้ำหนักด่วน</h1>
+        <p>เลือกสินค้าที่ต้องการแก้ไข แล้วกำหนดน้ำหนักของแต่ละรายการก่อนกดอัปเดต น้ำหนักใช้หน่วย <?php echo esc_html($weight_unit); ?> ตามการตั้งค่า WooCommerce</p>
+
+        <?php if (isset($_GET['no_selection'])) : ?>
+            <div class="notice notice-error is-dismissible"><p>กรุณาเลือกสินค้าอย่างน้อยหนึ่งรายการ</p></div>
+        <?php elseif (isset($_GET['updated'])) : ?>
+            <div class="notice notice-success is-dismissible"><p>อัปเดตน้ำหนักแล้ว <?php echo esc_html(absint($_GET['updated'])); ?> รายการ</p></div>
+            <?php if (isset($_GET['skipped']) && absint($_GET['skipped']) > 0) : ?>
+                <div class="notice notice-warning is-dismissible"><p>ไม่ได้อัปเดต <?php echo esc_html(absint($_GET['skipped'])); ?> รายการ เนื่องจากไม่มีสิทธิ์แก้ไขหรือค่าน้ำหนักไม่ถูกต้อง</p></div>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=woocommerce-custom-shipping-weight-editor&paged=' . $current_page)); ?>">
+            <?php wp_nonce_field('custom_shipping_update_weights', 'custom_shipping_weight_nonce'); ?>
+            <input type="hidden" name="custom_shipping_update_weights" value="1">
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <td class="manage-column column-cb check-column">
+                            <input type="checkbox" id="custom-shipping-select-all" aria-label="เลือกสินค้าทั้งหมดในหน้านี้">
+                        </td>
+                        <th scope="col">สินค้า</th>
+                        <th scope="col">ประเภท</th>
+                        <th scope="col">น้ำหนัก (<?php echo esc_html($weight_unit); ?>)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($products_query->have_posts()) : ?>
+                        <?php while ($products_query->have_posts()) : $products_query->the_post(); ?>
+                            <?php
+                            $product = wc_get_product(get_the_ID());
+                            if (!$product) {
+                                continue;
+                            }
+                            $product_id = $product->get_id();
+                            $is_variation = $product->is_type('variation');
+                            ?>
+                            <tr>
+                                <th scope="row" class="check-column">
+                                    <input type="checkbox" name="selected_products[]" value="<?php echo esc_attr($product_id); ?>" aria-label="<?php echo esc_attr('เลือก ' . $product->get_formatted_name()); ?>">
+                                </th>
+                                <td>
+                                    <?php echo esc_html($product->get_formatted_name()); ?>
+                                    <span class="description">(#<?php echo esc_html($product_id); ?>)</span>
+                                </td>
+                                <td><?php echo $is_variation ? 'สินค้าย่อย' : 'สินค้าหลัก'; ?></td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="product_weights[<?php echo esc_attr($product_id); ?>]"
+                                        value="<?php echo esc_attr($product->get_weight()); ?>"
+                                        min="0"
+                                        step="any"
+                                        class="small-text"
+                                    >
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else : ?>
+                        <tr><td colspan="4">ไม่พบสินค้าในระบบ</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+
+            <?php if ($products_query->max_num_pages > 1) : ?>
+                <div class="tablenav">
+                    <div class="tablenav-pages">
+                        <?php
+                        echo wp_kses_post(paginate_links(array(
+                            'base' => add_query_arg('paged', '%#%', admin_url('admin.php?page=woocommerce-custom-shipping-weight-editor')),
+                            'format' => '',
+                            'current' => $current_page,
+                            'total' => $products_query->max_num_pages,
+                            'prev_text' => '&laquo;',
+                            'next_text' => '&raquo;',
+                        )));
+                        ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <p>
+                <button type="submit" class="button button-primary" name="submit_weights" value="1">อัปเดตน้ำหนักทั้งหมด</button>
+            </p>
+        </form>
+        <script>
+            document.getElementById('custom-shipping-select-all').addEventListener('change', function () {
+                document.querySelectorAll('input[name="selected_products[]"]').forEach(function (checkbox) {
+                    checkbox.checked = document.getElementById('custom-shipping-select-all').checked;
+                });
+            });
+        </script>
+    </div>
+    <?php
+    wp_reset_postdata();
 }
 
 function woocommerce_custom_shipping_setting_page()
