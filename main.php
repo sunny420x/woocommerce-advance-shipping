@@ -42,6 +42,7 @@ function woocommerce_custom_shipping_weight_editor_page()
 
     $products_per_page = 50;
     $current_page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+    $search_term = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
 
     if (
         isset($_SERVER['REQUEST_METHOD']) &&
@@ -53,9 +54,10 @@ function woocommerce_custom_shipping_weight_editor_page()
         $selected_product_ids = isset($_POST['selected_products']) && is_array($_POST['selected_products'])
             ? array_values(array_unique(array_map('absint', wp_unslash($_POST['selected_products']))))
             : array();
-        $submitted_weights = isset($_POST['product_weights']) && is_array($_POST['product_weights'])
-            ? wp_unslash($_POST['product_weights'])
-            : array();
+        $raw_weight = isset($_POST['product_weight']) && is_scalar($_POST['product_weight'])
+            ? trim((string) wp_unslash($_POST['product_weight']))
+            : '';
+        $valid_weight = preg_match('/^(?:\d+(?:\.\d*)?|\.\d+)$/', $raw_weight);
         $updated_count = 0;
         $skipped_count = 0;
 
@@ -70,10 +72,7 @@ function woocommerce_custom_shipping_weight_editor_page()
                 continue;
             }
 
-            $raw_weight = isset($submitted_weights[$product_id]) && is_scalar($submitted_weights[$product_id])
-                ? (string) $submitted_weights[$product_id]
-                : '';
-            if (!preg_match('/^(?:\d+(?:\.\d*)?|\.\d+)$/', $raw_weight)) {
+            if (!$valid_weight) {
                 $skipped_count++;
                 continue;
             }
@@ -94,6 +93,7 @@ function woocommerce_custom_shipping_weight_editor_page()
             'updated' => $updated_count,
             'skipped' => $skipped_count,
             'paged' => $current_page,
+            's' => $search_term,
         );
         if (empty($selected_product_ids)) {
             $redirect_args['no_selection'] = 1;
@@ -108,6 +108,7 @@ function woocommerce_custom_shipping_weight_editor_page()
         'post_status' => array('publish', 'private', 'draft', 'pending', 'future', 'inherit'),
         'posts_per_page' => $products_per_page,
         'paged' => $current_page,
+        's' => $search_term,
         'orderby' => 'title',
         'order' => 'ASC',
         'no_found_rows' => false,
@@ -116,7 +117,7 @@ function woocommerce_custom_shipping_weight_editor_page()
     ?>
     <div class="wrap">
         <h1>แก้ไขน้ำหนักด่วน</h1>
-        <p>เลือกสินค้าที่ต้องการแก้ไข แล้วกำหนดน้ำหนักของแต่ละรายการก่อนกดอัปเดต น้ำหนักใช้หน่วย <?php echo esc_html($weight_unit); ?> ตามการตั้งค่า WooCommerce</p>
+        <p>เลือกสินค้าที่ต้องการแก้ไข แล้วกำหนดน้ำหนักใหม่ในช่องเดียวเพื่ออัปเดตสินค้าที่เลือกทั้งหมด น้ำหนักใช้หน่วย <?php echo esc_html($weight_unit); ?> ตามการตั้งค่า WooCommerce</p>
 
         <?php if (isset($_GET['no_selection'])) : ?>
             <div class="notice notice-error is-dismissible"><p>กรุณาเลือกสินค้าอย่างน้อยหนึ่งรายการ</p></div>
@@ -127,9 +128,29 @@ function woocommerce_custom_shipping_weight_editor_page()
             <?php endif; ?>
         <?php endif; ?>
 
-        <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=woocommerce-custom-shipping-weight-editor&paged=' . $current_page)); ?>">
+        <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>">
+            <input type="hidden" name="page" value="woocommerce-custom-shipping-weight-editor">
+            <p class="search-box">
+                <label class="screen-reader-text" for="custom-shipping-product-search">ค้นหาสินค้า</label>
+                <input type="search" id="custom-shipping-product-search" name="s" value="<?php echo esc_attr($search_term); ?>" placeholder="ค้นหาชื่อสินค้า">
+                <button type="submit" class="button">ค้นหา</button>
+                <?php if ($search_term !== '') : ?>
+                    <a class="button" href="<?php echo esc_url(admin_url('admin.php?page=woocommerce-custom-shipping-weight-editor')); ?>">ล้างการค้นหา</a>
+                <?php endif; ?>
+            </p>
+        </form>
+
+        <form method="post" action="<?php echo esc_url(add_query_arg(array(
+            'page' => 'woocommerce-custom-shipping-weight-editor',
+            'paged' => $current_page,
+            's' => $search_term,
+        ), admin_url('admin.php'))); ?>">
             <?php wp_nonce_field('custom_shipping_update_weights', 'custom_shipping_weight_nonce'); ?>
             <input type="hidden" name="custom_shipping_update_weights" value="1">
+            <p>
+                <label for="custom-shipping-product-weight">กำหนดน้ำหนักใหม่ให้สินค้าที่เลือก (<?php echo esc_html($weight_unit); ?>):</label>
+                <input type="number" id="custom-shipping-product-weight" name="product_weight" min="0" step="any" required class="small-text">
+            </p>
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
@@ -138,7 +159,7 @@ function woocommerce_custom_shipping_weight_editor_page()
                         </td>
                         <th scope="col">สินค้า</th>
                         <th scope="col">ประเภท</th>
-                        <th scope="col">น้ำหนัก (<?php echo esc_html($weight_unit); ?>)</th>
+                        <th scope="col">น้ำหนักปัจจุบัน (<?php echo esc_html($weight_unit); ?>)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -162,19 +183,12 @@ function woocommerce_custom_shipping_weight_editor_page()
                                 </td>
                                 <td><?php echo $is_variation ? 'สินค้าย่อย' : 'สินค้าหลัก'; ?></td>
                                 <td>
-                                    <input
-                                        type="number"
-                                        name="product_weights[<?php echo esc_attr($product_id); ?>]"
-                                        value="<?php echo esc_attr($product->get_weight()); ?>"
-                                        min="0"
-                                        step="any"
-                                        class="small-text"
-                                    >
+                                    <?php echo $product->get_weight() !== '' ? esc_html($product->get_weight()) : '—'; ?>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else : ?>
-                        <tr><td colspan="4">ไม่พบสินค้าในระบบ</td></tr>
+                        <tr><td colspan="4"><?php echo $search_term !== '' ? 'ไม่พบสินค้าที่ตรงกับคำค้นหา' : 'ไม่พบสินค้าในระบบ'; ?></td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -184,7 +198,11 @@ function woocommerce_custom_shipping_weight_editor_page()
                     <div class="tablenav-pages">
                         <?php
                         echo wp_kses_post(paginate_links(array(
-                            'base' => add_query_arg('paged', '%#%', admin_url('admin.php?page=woocommerce-custom-shipping-weight-editor')),
+                            'base' => add_query_arg(array(
+                                'page' => 'woocommerce-custom-shipping-weight-editor',
+                                's' => $search_term,
+                                'paged' => '%#%',
+                            ), admin_url('admin.php')),
                             'format' => '',
                             'current' => $current_page,
                             'total' => $products_query->max_num_pages,
