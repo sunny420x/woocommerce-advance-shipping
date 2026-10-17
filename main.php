@@ -577,6 +577,14 @@ function woocommerce_custom_shipping_setting_page()
                             <p>หากลูกค้าอยู่ในพื้นที่ห่างไกล เช่น 85 อำเภอห่างไกล จะคิดค่าบริการเพิ่มกี่บาท</p>
                             <input type="number" name="remote_surcharge"
                                 value="<?php echo esc_attr(get_option('remote_surcharge', 50)); ?>" />
+                            <h2>พื้นที่ยากลำบาก (Difficult Areas)</h2>
+                            <p>กรอกรหัสไปรษณีย์ที่ต้องการบวกค่าบริการเพิ่ม แยกด้วยเครื่องหมายคอมม่าหรือขึ้นบรรทัดใหม่</p>
+                            <textarea name="difficult_areas_list" rows="10" cols="50" class="large-text" style="font-family: monospace;"><?php
+                                echo esc_textarea(get_option('difficult_areas_list', ''));
+                            ?></textarea>
+                            <p>หากลูกค้าอยู่ในพื้นที่ยากลำบาก จะคิดค่าบริการเพิ่มกี่บาท</p>
+                            <input type="number" name="difficult_areas_surcharge"
+                                value="<?php echo esc_attr(get_option('difficult_areas_surcharge', 0)); ?>" />
                         </div>
                         <div>
                             <h2>อื่น ๆ</h2>
@@ -861,6 +869,9 @@ function woocommerce_custom_shipping_setting_page()
                     <label for="free_shipping_remote_areas_cost">ค่าธรรมเนียมเพิ่มเติมสำหรับพื้นที่ห่างไกล: </label>
                     <input type="number" name="free_shipping_remote_areas_cost" id="free_shipping_remote_areas_cost" value="<?=get_option('free_shipping_remote_areas_cost', 100)?>"> บาท
                     <br>
+                    <label for="free_shipping_difficult_areas_cost">ค่าธรรมเนียมเพิ่มเติมสำหรับพื้นที่ยากลำบาก: </label>
+                    <input type="number" name="free_shipping_difficult_areas_cost" id="free_shipping_difficult_areas_cost" value="<?php echo esc_attr(get_option('free_shipping_difficult_areas_cost', 0)); ?>"> บาท
+                    <br>
                     <br>
                     <input type="submit" value="บันทึกการเปลี่ยนแปลง" class="button button-primary" style="width: 100%;">
                 </form>
@@ -960,6 +971,8 @@ function woocommerce_custom_shipping_setting_init()
     register_setting('shipping_settings_group', 'enable_ems');
     register_setting('shipping_settings_group', 'remote_surcharge');
     register_setting('shipping_settings_group', 'remote_areas_list');
+    register_setting('shipping_settings_group', 'difficult_areas_list');
+    register_setting('shipping_settings_group', 'difficult_areas_surcharge');
     register_setting('shipping_settings_group', 'no_discount_self_pickup');
     register_setting('shipping_settings_group', 'enable_kerry_express');
 
@@ -968,11 +981,23 @@ function woocommerce_custom_shipping_setting_init()
 
     register_setting('free_shipping_settings_group', 'free_shipping_products_list');
     register_setting('free_shipping_settings_group', 'free_shipping_remote_areas_cost');
+    register_setting('free_shipping_settings_group', 'free_shipping_difficult_areas_cost');
 
     register_setting( 'default_shipping_settings_group', 'default_shipping_pricing' );
 }
 
 add_filter('woocommerce_package_rates', 'combined_shipping_methods', 10, 2);
+function custom_shipping_zip_matches_list($destination_zip, $zip_list)
+{
+    $destination_zip = trim((string) $destination_zip);
+    if ($destination_zip === '' || !is_scalar($zip_list)) {
+        return false;
+    }
+
+    $zip_codes = array_filter(array_map('trim', preg_split('/\r\n|\n|,/', (string) $zip_list) ?: array()));
+    return in_array($destination_zip, $zip_codes, true);
+}
+
 function combined_shipping_methods($rates, $package)
 {
     if (!is_array($rates)) {
@@ -1010,8 +1035,9 @@ function combined_shipping_methods($rates, $package)
 
     $destination_zip = isset($package['destination']['postcode']) ? $package['destination']['postcode'] : '';
     $remote_areas_raw = get_option('remote_areas_list', '');
-    $remote_areas = array_filter(array_map('trim', preg_split('/\r\n|\n|,/', $remote_areas_raw) ?: array()));
-    $is_remote = !empty($destination_zip) && in_array($destination_zip, $remote_areas, true);
+    $is_remote = custom_shipping_zip_matches_list($destination_zip, $remote_areas_raw);
+    $difficult_areas_raw = get_option('difficult_areas_list', '');
+    $is_difficult_area = custom_shipping_zip_matches_list($destination_zip, $difficult_areas_raw);
 
     $free_shipping_products_raw = get_option('free_shipping_products_list', '');
     $free_shipping_products = array_filter(array_map('intval', array_map('trim', explode(',', $free_shipping_products_raw))));
@@ -1106,25 +1132,27 @@ function combined_shipping_methods($rates, $package)
 
     if ($has_non_free_product) {
         $remote_surcharge = $is_remote ? (float) get_option('remote_surcharge', 60) : 0;
+        $difficult_areas_surcharge = $is_difficult_area ? (float) get_option('difficult_areas_surcharge', 0) : 0;
     } elseif ($has_free_shipping_product) {
         $remote_surcharge = $is_remote ? (float) get_option('free_shipping_remote_areas_cost', 100) : 0;
+        $difficult_areas_surcharge = $is_difficult_area ? (float) get_option('free_shipping_difficult_areas_cost', 0) : 0;
     } else {
         $remote_surcharge = 0;
+        $difficult_areas_surcharge = 0;
     }
 
     if (!$has_non_free_product) {
         $packing_fee = 0;
-        $remote_surcharge = 0;
     }
 
     $auto_id = 'custom_shipping_auto';
-    $auto_cost = $default_shipping_total + $packing_fee + $remote_surcharge;
+    $auto_cost = $default_shipping_total + $packing_fee + $remote_surcharge + $difficult_areas_surcharge;
     $auto_rate = new WC_Shipping_Rate($auto_id, 'ค่าจัดส่ง (เลือกอัตโนมัติ)', $auto_cost);
     $new_rates[$auto_id] = $auto_rate;
 
     if (get_option('enable_kerry_express') == 'yes') {
         $kerry_id = 'custom_shipping_kerry';
-        $kerry_cost = $default_shipping_total + $packing_fee + $remote_surcharge + (float) get_option('kerry_express_fee', 30);
+        $kerry_cost = $default_shipping_total + $packing_fee + $remote_surcharge + $difficult_areas_surcharge + (float) get_option('kerry_express_fee', 30);
         $kerry_rate = new WC_Shipping_Rate($kerry_id, 'Kerry Express', $kerry_cost);
         $new_rates[$kerry_id] = $kerry_rate;
     }
@@ -1168,7 +1196,7 @@ function combined_shipping_methods($rates, $package)
             $ems_cost = (float) get_option('ems_fee_p15', 140) + ($extra_kg * (float) get_option('ems_fee_after_6kg', 35));
         }
 
-        $ems_total = $ems_cost + $packing_fee + $remote_surcharge;
+        $ems_total = $ems_cost + $packing_fee + $remote_surcharge + $difficult_areas_surcharge;
         $ems_rate = new WC_Shipping_Rate('custom_shipping_ems', 'ไปรษณีย์ไทย (EMS)', $ems_total);
         $new_rates[$ems_rate->get_id()] = $ems_rate;
     }
