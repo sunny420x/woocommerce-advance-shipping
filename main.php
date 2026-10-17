@@ -443,6 +443,7 @@ function woocommerce_custom_shipping_setting_page()
                 ?>
             <h1>ช่วงค่าขนส่งตามน้ำหนักต่าง ๆ</h1>
             <div style="padding: 25px 25px 25px 25px;">
+                <p>หากน้ำหนักเกินช่วงสูงสุด ระบบจะคิดค่าขนส่งช่วงสูงสุดคูณตามจำนวนรอบของน้ำหนัก (ปัดเศษรอบขึ้น) เช่น ช่วงสูงสุด 300 กก. และน้ำหนัก 900 กก. คิด 3 รอบ</p>
                 <div style="display: flex; gap: 10px;">
                     <button class="button botton-outline-primary" style="width: 50%;" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&newProfile'">➕ เพิ่มช่วงค่าขนส่งใหม่</button>
                     <button class="button botton-outline-primary" style="width: 50%;" onclick="window.location.href='admin.php?page=woocommerce-custom-shipping-settings&option=default&adjustPrice'">➕ ปรับราคา</button>
@@ -998,6 +999,40 @@ function custom_shipping_zip_matches_list($destination_zip, $zip_list)
     return in_array($destination_zip, $zip_codes, true);
 }
 
+function custom_shipping_cost_for_weight($weight_grams, $pricing_profiles)
+{
+    $highest_profile = null;
+
+    foreach ($pricing_profiles as $profile) {
+        $start = isset($profile['start']) ? (float) $profile['start'] : 0;
+        $end = isset($profile['end']) ? (float) $profile['end'] : 0;
+        $cost = isset($profile['cost']) ? (float) $profile['cost'] : 0;
+
+        if ($weight_grams >= $start && $weight_grams <= $end) {
+            return $cost;
+        }
+
+        if ($highest_profile === null || $end > (float) $highest_profile['end']) {
+            $highest_profile = array(
+                'end' => $end,
+                'cost' => $cost,
+            );
+        }
+    }
+
+    if ($highest_profile !== null && $weight_grams > (float) $highest_profile['end']) {
+        $weight_per_round = (float) $highest_profile['end'];
+        if ($weight_per_round <= 0) {
+            return null;
+        }
+
+        $rounds = (int) ceil($weight_grams / $weight_per_round);
+        return (float) $highest_profile['cost'] * $rounds;
+    }
+
+    return null;
+}
+
 function combined_shipping_methods($rates, $package)
 {
     if (!is_array($rates)) {
@@ -1087,14 +1122,9 @@ function combined_shipping_methods($rates, $package)
                 if ($weight_threshold_enabled && $product_weight_grams > $weight_threshold_value) {
                     // Calculate shipping for each item individually (over threshold)
                     $threshold_item_count += $quantity;
-                    foreach ($default_pricing as $profile) {
-                        $start = (float) $profile['start'];
-                        $end = (float) $profile['end'];
-
-                        if ($product_weight_grams >= $start && $product_weight_grams <= $end) {
-                            $threshold_shipping_total += ((float) $profile['cost']) * $quantity;
-                            break;
-                        }
+                    $item_shipping_cost = custom_shipping_cost_for_weight($product_weight_grams, $default_pricing);
+                    if ($item_shipping_cost !== null) {
+                        $threshold_shipping_total += $item_shipping_cost * $quantity;
                     }
                 } else {
                     // Add to normal weight pool (normal items)
@@ -1105,14 +1135,9 @@ function combined_shipping_methods($rates, $package)
 
         // Calculate shipping for normal items (by total weight)
         if ($normal_weight_total > 0) {
-            foreach ($default_pricing as $profile) {
-                $start = (float) $profile['start'];
-                $end = (float) $profile['end'];
-
-                if ($normal_weight_total >= $start && $normal_weight_total <= $end) {
-                    $normal_shipping_total = (float) $profile['cost'];
-                    break;
-                }
+            $normal_shipping_cost = custom_shipping_cost_for_weight($normal_weight_total, $default_pricing);
+            if ($normal_shipping_cost !== null) {
+                $normal_shipping_total = $normal_shipping_cost;
             }
         }
 
